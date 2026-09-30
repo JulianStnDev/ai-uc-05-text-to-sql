@@ -135,3 +135,14 @@ Das ergibt nur am Stichtag dieselben Zahlen, deshalb läuft der volle Lauf am 30
 Kosten im Pilot: 0,178 USD für 27 Fragen (0,0066 USD je Frage, Schätzung war 0,010). p95 9,1 s. Prompt-Caching greift bei
 Haiku nicht (Prompt ca. 1.700 Tokens, Haiku 4.5 cacht erst ab 4.096). Neue Schätzung für den vollen Lauf (je 27 × 3):
 Haiku ca. 0,54 USD, Sonnet 5.5 ca. 1,20–2,40 USD. Budgets 1,00 und 3,50 USD, freigegeben von Julian.
+
+## 2026-09-30: Voller Lauf Branch (b)
+
+Freigegeben von Julian: Haiku 4.5 und Sonnet 5.5, je 27 × 3, Budgets 1,00 und 3,50 USD. Die Läufe liefen am Stichtag
+30.09.2026 auf den eingefrorenen Regeln (Commit „Pilot: Protokoll, Vergleichsregeln kalibriert …“), parallel.
+Ergebnis: Haiku 47/81, Sonnet 74/81. Kosten 0,53 und 0,77 USD, zusammen 1,30 USD (Schätzung 1,80–3,00 USD).
+Details in evals/results.md. Keine Regeländerung nach dem Lauf.
+
+Beobachtung für Branch (c): E05 und F02 (Umsatz) scheitern bei beiden Modellen. Sonnet fragt dort in 3 von 6 Läufen
+nach der Umsatzdefinition. Das Glossar legt sie fest, deshalb sollten hier die größten Unterschiede zwischen (b) und (c)
+zu sehen sein.
