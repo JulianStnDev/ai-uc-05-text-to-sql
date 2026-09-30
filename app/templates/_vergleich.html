@@ -1,0 +1,16 @@
+{#- Zwei Platzhalter, die ihre Antwortkarte je für sich laden: Die beiden Modellaufrufe laufen parallel. -#}
+{% if not frage %}
+<p class="hinweis">Please enter a question.</p>
+{% else %}
+<div class="nebeneinander">
+  {% for modell, variante in paare %}
+  <div class="spalte" hx-post="/antwort" hx-trigger="load" hx-swap="innerHTML"
+       hx-vals='{{ {"frage": frage, "modell": modell, "variante": variante, "titel": MODELLE[modell] ~ " · " ~ VARIANTEN[variante]}|tojson }}'>
+    <article class="karte wartet">
+      <header class="karte-kopf"><span>{{ MODELLE[modell] }} · {{ VARIANTEN[variante] }}</span></header>
+      <p class="leise">Thinking and querying the database …</p>
+    </article>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

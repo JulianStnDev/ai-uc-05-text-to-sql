@@ -1,0 +1,111 @@
+:root {
+  color-scheme: light;
+  --grund: #fcfcfb;
+  --flaeche: #ffffff;
+  --linie: #e3e2dc;
+  --text: #1f2328;
+  --leise: #59636e;
+  --akzent: #2a78d6;
+  --akzent-hell: #e8f1fc;
+  --gut: #1a7f37;
+  --schlecht: #cf222e;
+  --andere: #fbf6e8;
+  --andere-rand: #e3c77a;
+  --code: #f4f3ef;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --grund: #151514;
+    --flaeche: #1d1d1b;
+    --linie: #34342f;
+    --text: #e8e7e1;
+    --leise: #a3a29a;
+    --akzent: #5b9ef0;
+    --akzent-hell: #1c2b3f;
+    --gut: #3fb950;
+    --schlecht: #f85149;
+    --andere: #2a2618;
+    --andere-rand: #7a6a3a;
+    --code: #232320;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--grund); color: var(--text);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+.leise { color: var(--leise); }
+.klein { font-size: 13px; }
+
+.kopf { display: flex; align-items: center; gap: 24px; padding: 12px 16px; border-bottom: 1px solid var(--linie);
+  background: var(--flaeche); flex-wrap: wrap; }
+.marke { font-weight: 700; }
+.marke span { font-weight: 400; color: var(--leise); }
+.kopf nav { display: flex; gap: 4px; }
+.kopf nav a { color: var(--text); text-decoration: none; padding: 6px 12px; border-radius: 6px; }
+.kopf nav a[aria-current="page"] { background: var(--akzent-hell); color: var(--akzent); font-weight: 600; }
+.budget { margin-left: auto; font-size: 14px; color: var(--leise); }
+.fuss { max-width: 1100px; margin: 0 auto; padding: 16px; font-size: 13px; color: var(--leise); }
+
+.frage label { display: block; font-weight: 600; margin-bottom: 8px; }
+.zeile { display: flex; gap: 8px; }
+.zeile input { flex: 1; min-width: 0; padding: 10px 12px; font-size: 16px; border: 1px solid var(--linie);
+  border-radius: 8px; background: var(--flaeche); color: var(--text); }
+button { font: inherit; cursor: pointer; }
+.zeile button { padding: 10px 18px; border: 0; border-radius: 8px; background: var(--akzent); color: #fff; font-weight: 600; }
+.optionen { display: flex; gap: 20px; flex-wrap: wrap; margin: 12px 0 0; padding: 0; border: 0; font-size: 14px; }
+.optionen label { font-weight: 400; display: inline-flex; gap: 6px; align-items: center; margin: 0; }
+.optionen select { font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--linie);
+  background: var(--flaeche); color: var(--text); }
+.beispiele { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0 24px; }
+.chip { font-size: 13px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--linie); background: var(--flaeche);
+  color: var(--text); text-align: left; }
+.chip:hover { border-color: var(--akzent); }
+.laden { display: none; color: var(--leise); margin-bottom: 12px; }
+.laden.htmx-request { display: block; }
+
+.karte { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px; padding: 20px 22px; }
+.karte-kopf { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--leise);
+  text-transform: uppercase; letter-spacing: .04em; }
+.frage-text { color: var(--leise); margin: 8px 0 4px; }
+.gross { font-size: 44px; font-weight: 700; line-height: 1.1; margin: 12px 0 4px; font-variant-numeric: tabular-nums; }
+.satz { font-size: 17px; margin: 6px 0 12px; }
+.etikett { display: inline-block; margin: 12px 0 0; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  background: var(--akzent-hell); color: var(--akzent); }
+.art-keine_daten .etikett { background: var(--code); color: var(--leise); }
+.art-keine_daten .satz { color: var(--leise); }
+.hinweis { padding: 10px 12px; border-radius: 8px; background: var(--andere); border: 1px solid var(--andere-rand); }
+.teil { border-top: 1px solid var(--linie); padding-top: 10px; margin-top: 12px; }
+.teil h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--leise); margin: 0 0 6px; }
+.teil ul { margin: 0; padding-left: 20px; }
+.begriff { display: inline-block; margin: 0 6px 6px 0; padding: 2px 8px; border-radius: 6px; font-size: 14px;
+  background: var(--akzent-hell); color: var(--akzent); cursor: help; }
+.andere { background: var(--andere); border: 1px solid var(--andere-rand); border-radius: 8px; padding: 10px 12px; }
+.andere-zahl { white-space: nowrap; }
+details summary { cursor: pointer; color: var(--leise); font-size: 14px; }
+pre { background: var(--code); padding: 12px; border-radius: 8px; overflow-x: auto; white-space: pre; }
+.zeilen { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.zeilen td { padding: 3px 12px 3px 0; border-bottom: 1px solid var(--linie); }
+.erwartet { margin: 12px 0 0; }
+.karte-fuss { margin-top: 14px; font-size: 12px; color: var(--leise); }
+.urteil.gut { color: var(--gut); font-weight: 600; }
+.urteil.schlecht { color: var(--schlecht); font-weight: 600; }
+
+.nebeneinander { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.karte.wartet { opacity: .7; }
+@media (max-width: 760px) { .nebeneinander { grid-template-columns: 1fr; } .gross { font-size: 36px; } }
+
+.galerie-kopf h1 { margin: 0 0 4px; font-size: 22px; }
+.galerie { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .galerie { grid-template-columns: 1fr; } }
+.tabelle-rahmen { overflow-x: auto; border: 1px solid var(--linie); border-radius: 12px; background: var(--flaeche); }
+.matrix { border-collapse: collapse; font-size: 13px; }
+.matrix th, .matrix td { padding: 4px 6px; border-bottom: 1px solid var(--linie); text-align: left; white-space: nowrap; }
+.matrix thead th { font-weight: 600; color: var(--leise); vertical-align: bottom; white-space: normal; min-width: 64px; font-size: 12px; }
+.matrix tbody th { font-weight: 400; }
+.matrix .id { font-weight: 600; }
+.matrix button { border: 0; background: none; padding: 0 2px; font-size: 14px; }
+.marke-gut { color: var(--gut); }
+.marke-schlecht { color: var(--schlecht); }
+#galerie-karte { position: sticky; top: 12px; }

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block inhalt %}
+<form id="vergleich-form" class="frage" hx-post="/compare" hx-target="#vergleich">
+  <label for="frage">Ask the same question twice, side by side <span class="leise">(in German)</span></label>
+  <div class="zeile">
+    <input id="frage" name="frage" maxlength="300" required value="{{ q }}"
+           placeholder="z. B. Über welchen Marketingkanal kamen im März 2026 die meisten Neukunden?" autocomplete="off">
+    <button type="submit">Compare</button>
+  </div>
+  <fieldset class="optionen">
+    <legend class="leise">Compare</legend>
+    <label><input type="radio" name="modus" value="glossar" {% if modus == "glossar" %}checked{% endif %}> schema only vs. + glossary <span class="leise">(Haiku)</span></label>
+    <label><input type="radio" name="modus" value="modell" {% if modus == "modell" %}checked{% endif %}> Haiku vs. Sonnet <span class="leise">(+ glossary)</span></label>
+  </fieldset>
+</form>
+
+<div class="beispiele" aria-label="Example questions">
+  <span class="leise">Try:</span>
+  {% for b in beispiele %}
+  <button type="button" class="chip" title="{{ b.id }} · {{ b.typ }}"
+          hx-post="/compare" hx-target="#vergleich" hx-include="#vergleich-form" hx-vals='{{ {"frage": b.frage}|tojson }}'
+          onclick="document.getElementById('frage').value = this.dataset.frage" data-frage="{{ b.frage }}">{{ b.frage }}</button>
+  {% endfor %}
+</div>
+
+<section id="vergleich" aria-live="polite">
+  {% if q %}<div hx-post="/compare" hx-trigger="load" hx-include="#vergleich-form" hx-target="#vergleich"></div>{% endif %}
+</section>
+{% endblock %}

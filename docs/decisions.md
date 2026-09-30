@@ -224,3 +224,25 @@ Schätzung: Prompt bei Haiku 3.439 Tokens (Glossar allein 2.898, nur Schema 1.73
   Oberfläche zeigt SQL und Annahmen nebeneinander. Zahlen, die nicht aus ausgeführter SQL stammen (etwa im Text einer
   Rückfrage), werden nicht hervorgehoben. Keine automatische Annahmen-Prüfung in (d).
 - Die Grafik skaliert die Balkenbreite mit der Zahl der Serien und zeigt bei Enge nur die Zahl ohne „%“.
+
+## 2026-09-30: Branch (d2): Web-App, lokal
+
+- Stack wie UC7: FastAPI + Jinja2 + htmx (Datei im Repo). Oberfläche Englisch, Fragen und Antworten Deutsch.
+  Library-Liste in CLAUDE.md mit Julians Freigabe erweitert (fastapi, uvicorn[standard], jinja2, python-multipart;
+  httpx nur für Tests).
+- Seiten: Ask (Antwortkarte), Compare (nur Schema gegen + Glossar oder Haiku gegen Sonnet, parallel), Gallery (alle
+  gemessenen vollen Läufe, ohne API-Kosten; Vorstufe für das Replay in f).
+- Die App nutzt immer das Format „karte“. Als Kontext sind nur „schema“ und „glossar“ wählbar, nicht die auf das Goldset
+  hin optimierte Zusatzvariante.
+- Kostendeckel (Julian): 0,25 USD pro Sitzung, 3,00 USD pro Monat für UC5 (UC7 hat eigene 4,50 USD). UC7 kennt keinen
+  Sitzungsdeckel. Hier gilt: signiertes Cookie (HMAC, stdlib), Reserve je Frage vorab buchen (Haiku 0,05, Sonnet 0,15
+  USD, wie im Messlauf), danach die echten Kosten abrechnen. Kostenbuch in SQLite (lokal) oder Postgres (KOSTEN_DB_URL,
+  Cloud Run), nie im Prozess-Speicher und nie in der Analyse-Datenbank.
+- Nur `analyst_ro`: Die App prüft `current_user` beim ersten Zugriff. Fehlermeldungen nennen nur den Fehlertyp.
+- Aus docs/ANTWORTEN.md: Die große Zahl stammt aus der ausgeführten Antwort-SQL (bei einer Ergebniszeile der letzte
+  Wert). Die Zahl der anderen Deutung rechnet der Harness. Zahlen im Text einer Rückfrage bekommen einen Hinweis.
+  Annahmen stehen neben dem SQL.
+- Für Cloud Run (f) vorbereitet: Dockerfile, /health, $PORT, Secrets nur per Umgebung, .gcloudignore ohne .env.
+  Das Image ist lokal noch nicht gebaut (Docker-Daemon lief nicht); die Dateiauswahl des Dockerfiles ist mit einem
+  Rauchtest in einem leeren Verzeichnis geprüft.
+- Entwicklung und Screenshots: 7 echte Fragen, 0,10 USD (Budget 0,50).

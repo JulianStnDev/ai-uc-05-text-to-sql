@@ -28,6 +28,7 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 - `docs/DATA_NOTES.md`: die Fallen, nur für Menschen, nie Teil eines Prompts.
 - `docs/GLOSSAR.md`: Geschäftsdefinitionen (Entwurf), bekommt das Modell erst in Branch (c).
 - `scripts/copilot.py`: der Copilot. Zwei strikte Werkzeuge, `sql_ausfuehren` (führt SQL als `analyst_ro` aus, höchstens 5 je Frage) und `antworten` (Ergebnis mit SQL, Rückfrage oder „keine Daten“). Der Harness führt die Antwort-SQL erneut aus; bewertet wird dieses Ergebnis, nicht der Text.
+- `app/`: die Web-App (FastAPI + Jinja2 + htmx), siehe unten.
 - `scripts/baseline.py`: Messlauf mit hartem Budget, zeigt ohne `--ja` nur die Schätzung. `scripts/auswerten.py`: Trefferquote je Fragetyp, Kosten je 1000 Requests, p50/p95-Latenz.
 
 ## Daten
@@ -107,6 +108,24 @@ Gemessen an je 81 Läufen je Modell und Variante:
 - Pilot und voller Lauf von Branch (b) kosteten zusammen 1,48 USD; Branch (c) mit Zusatzvariante 2,31 USD; die Anatomie eines Laufs 0,08 USD.
 - Branch (a) machte keine API-Aufrufe. Neon läuft im Free-Tier.
 
+## Die App (lokal)
+Eine kleine Web-App über dem Copiloten, gleicher Stack wie UC7: FastAPI, Jinja2 und htmx (als Datei im Repo, kein CDN). Die Oberfläche ist Englisch, Fragen und Antworten sind Deutsch.
+
+- **Ask:** Frage eintippen oder ein Beispiel anklicken. Die Antwortkarte zeigt das Ergebnis groß, die verwendeten Glossar-Begriffe (Mouseover zeigt die Definition), die Annahmen, eine andere naheliegende Deutung mit ihrer Zahl, das SQL mit Ergebnis (einklappbar) und die Kosten der Frage.
+- **Compare:** dieselbe Frage nebeneinander, wahlweise *nur Schema gegen + Glossar* oder *Haiku gegen Sonnet*. Beide Aufrufe laufen parallel.
+- **Gallery:** alle gemessenen Läufe der vollen Messungen als anklickbare Beispiele, bewertet mit den eingefrorenen Regeln, ohne API-Kosten (Vorstufe für das Replay beim Online-Gang).
+- **Kostendeckel:** 0,25 USD pro Sitzung (signiertes Cookie) und 3,00 USD pro Monat für die ganze App. Jede Frage bucht zuerst eine Reserve (die Obergrenze je Frage des Modells) und rechnet danach die echten Kosten ab, so können auch zwei parallele Aufrufe den Deckel nicht überschreiten. Das Kostenbuch liegt lokal in SQLite und auf Cloud Run in Postgres, nie im Speicher des Prozesses und nie in der Analyse-Datenbank, auf der die App nur Leserechte hat.
+- **Nur lesend:** SQL läuft ausschließlich als `analyst_ro`; die App prüft `current_user` beim ersten Zugriff und verweigert jede andere Rolle. Fehlermeldungen zeigen nie Verbindungsdaten.
+- **Bereit für Cloud Run:** `Dockerfile` (python:3.13-slim, Nutzer ohne Root, Port aus `$PORT`), `/health`, Secrets nur aus der Umgebung, `.gcloudignore` schließt `.env` aus.
+
+Was die Antwortkarte sichtbar macht, nach [docs/ANTWORTEN.md](docs/ANTWORTEN.md): Zahlen kommen nur aus ausgeführter SQL; die Zahl der anderen Deutung rechnet der Harness; Zahlen im Text einer Rückfrage bekommen einen Hinweis, dass niemand sie ausgeführt hat; die Annahmen stehen neben dem SQL, weil sie die Absicht beschreiben, nicht das, was das SQL tut.
+
+| Antwortkarte (E05, Haiku + Glossar) | Rückfrage (M02) |
+|---|---|
+| ![Antwortkarte: Umsatz Mai 2026, 1.224,34, mit verwendeten Definitionen und Annahmen](docs/img/app_antwortkarte.png) | ![Rückfrage zu „Wie viele Kunden haben wir?“, mit Hinweis, dass die Zahlen im Text nicht ausgeführt wurden](docs/img/app_rueckfrage_m02.png) |
+| **Vergleich nur Schema gegen + Glossar (E05)** | **Vergleich Haiku gegen Sonnet (U01)** |
+| ![Nebeneinander: nur Schema ergibt 1.344,34 ohne Erstattungen, mit Glossar 1.224,34](docs/img/app_vergleich_glossar_e05.png) | ![Nebeneinander: Haiku nimmt den Abrechnungskanal als Ersatz für den Marketingkanal und sagt es; Sonnet antwortet „keine Daten“](docs/img/app_vergleich_modelle_u01.png) |
+
 ## Lokal ausführen
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -117,6 +136,8 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # einmalig: Datenbank,
 .venv/bin/python scripts/baseline.py --modell haiku --budget 0.50        # nur Schätzung; --ja startet (kostet Geld)
 .venv/bin/python scripts/auswerten.py evals/laeufe/*.jsonl                # Auswertung (ohne API)
 .venv/bin/python scripts/grafik.py                                        # Grafik (ohne API)
+.venv/bin/pip install -r requirements-dev.txt                             # httpx, nur für die App-Tests
+.venv/bin/uvicorn --factory app.main:create_app --reload                  # die App auf http://localhost:8000 (kostet pro Frage, gedeckelt)
 ```
 
 ## Learnings

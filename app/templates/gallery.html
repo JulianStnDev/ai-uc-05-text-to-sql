@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block inhalt %}
+<section class="galerie-kopf">
+  <h1>Gallery</h1>
+  <p>Every recorded run from the full measurements on 30.09.2026: 27 questions, 3 runs each, graded with the frozen
+    rules. Click a mark to open the stored answer. <strong>No API cost.</strong>
+    <span class="leise">* added after the measurement, tuned to this goldset.</span></p>
+</section>
+<div class="galerie">
+  <div class="tabelle-rahmen">
+    <table class="matrix">
+      <thead><tr><th>Question</th>{% for l in laeufe %}<th>{{ l.name }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for f in fragen %}
+        <tr>
+          <th scope="row" title="{{ f.frage }}"><span class="id">{{ f.id }}</span> {{ f.frage|truncate(26) }}</th>
+          {% for l in laeufe %}
+          <td>{% for w in [1, 2, 3] %}{% set z = l.zeilen.get((f.id, w)) %}{% if z %}<button type="button"
+                class="marke-{{ 'gut' if z.richtig else 'schlecht' }}" aria-label="{{ f.id }} {{ l.name }} run {{ w }}: {{ 'correct' if z.richtig else 'wrong' }}"
+                hx-get="/gallery/{{ l.schluessel }}/{{ f.id }}/{{ w }}" hx-target="#galerie-karte">{{ '✓' if z.richtig else '✗' }}</button>{% endif %}{% endfor %}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <aside id="galerie-karte" aria-live="polite"><p class="leise">Pick a run on the left.</p></aside>
+</div>
+{% endblock %}
