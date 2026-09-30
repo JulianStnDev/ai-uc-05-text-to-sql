@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: Ein Analytics-Copilot auf Daten mit Fallen
 
-> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b) ist gemessen: nur Schema, Sonnet 5.5 91 %, Haiku 4.5 58 % richtig. Branch (c) (Glossar) folgt.
+> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b) und (c) sind gemessen: Mit Glossar steigt Haiku 4.5 von 58 % auf 86 % richtige Antworten, Sonnet 5.5 von 91 % auf 96 %.
 
 ## Problem
 Produkt- und Support-Teams der fiktiven Habit-Tracker-App FocusFlow stellen Business-Fragen („Wie viel Umsatz hatten wir im Q2?“, „Wie viele Kunden haben im August gekündigt?“) und warten Tage auf einen Analysten. Ein Copilot, der SQL schreibt und ausführt, könnte in Sekunden antworten, aber nur, wenn die Zahl stimmt. Text-to-SQL scheitert selten an der Syntax. Es scheitert an Geschäftsregeln, die das Schema nicht zeigt: Doppelabbuchungen, Store-Käufe in einer eigenen Tabelle, Kündigung vs. Abo-Ende, Erstattungen, Zeitzonen, eine irreführend benannte Spalte. Und er soll bei mehrdeutigen Fragen zurückfragen statt zu raten.
@@ -51,13 +51,6 @@ Die Vergleichsregeln stehen vor der ersten Messung als Code fest ([scripts/vergl
 
 **Branch (b), nur Schema: voller Lauf am 30.09.2026, 27 Fragen × 3 Wiederholungen je Modell.**
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/img/ergebnis_de_dunkel.svg">
-  <img src="docs/img/ergebnis_de_hell.svg" alt="Gruppiertes Balkendiagramm: Anteil richtiger Antworten je Fragetyp, nur Schema. Haiku 4.5: eindeutig 76 %, mehrdeutig 50 %, Fallen 20 %, unbeantwortbar 50 %. Sonnet 5.5: 93 %, 94 %, 80 %, 100 %.">
-</picture>
-
-*Richtige Antworten je Fragetyp, 3 Läufe je Frage; die Grafik erzeugt `scripts/grafik.py` aus `evals/laeufe/`.*
-
 | | Haiku 4.5 | Sonnet 5.5 (effort medium) |
 |---|---|---|
 | richtig (81 Läufe) | 47/81 (58 %) | **74/81 (91 %)** |
@@ -71,20 +64,45 @@ Mit dem Schema allein beantwortet Sonnet 5.5 91 % von 81 Läufen richtig (Haiku 
 
 **Bekannte Grenze des Goldsets:** Ohne Glossar sind E05 und F02 faktisch mehrdeutig („Umsatz“ brutto oder nach Store-Gebühr, mit oder ohne Erstattungen). Sonnets Rückfragen dort sind vertretbar. Die Regeln bleiben eingefroren, die Bewertung bleibt wie gemessen (E05 und F02 zählen als falsch); in Branch (c) definiert das Glossar „Umsatz“.
 
-## Kosten & Latenz
-Branch (b), nur Schema, gemessen an je 81 Läufen:
+**Branch (c), Schema + Glossar: voller Lauf am 30.09.2026, 27 Fragen × 3 je Modell.** Das Glossar ist der Entwurf aus Branch (a), geschrieben vor jeder Messung und unverändert eingefroren (SHA-256 im Entscheidungslog, per Test abgesichert).
 
-| | Haiku 4.5 | Sonnet 5.5 |
-|---|---|---|
-| Kosten pro 1000 Requests | 6,54 USD | 9,51 USD |
-| Kosten pro 1000 richtige Antworten | 11,27 USD | 10,41 USD |
-| p95-Latenz | 9,9 s | 11,5 s |
-| Qualität: richtig / pass^3 | 58 % / 14 von 27 | 91 % / 24 von 27 |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/ergebnis_de_dunkel.svg">
+  <img src="docs/img/ergebnis_de_hell.svg" alt="Gruppiertes Balkendiagramm: Anteil richtiger Antworten je Fragetyp (eindeutig, mehrdeutig, Fallen, unbeantwortbar). Haiku 4.5 nur Schema: 76, 50, 20, 50 %; mit Glossar: 93, 78, 93, 50 %; mit Glossar und Spaltenverzeichnis (nach der Messung ergänzt): 90, 78, 87, 67 %. Sonnet 5.5 nur Schema: 93, 94, 80, 100 %; mit Glossar: 93, 100, 100, 100 %.">
+</picture>
+
+*Richtige Antworten je Fragetyp, 3 Läufe je Frage; schraffiert = mit Glossar, kreuzschraffiert = nach der Messung ergänzte Zusatzvariante; die Grafik erzeugt `scripts/grafik.py` aus `evals/laeufe/`.*
+
+| | Haiku (b) | **Haiku (c)** | Sonnet (b) | **Sonnet (c)** |
+|---|---|---|---|---|
+| richtig (81 Läufe) | 47/81 (58 %) | **70/81 (86 %)** | 74/81 (91 %) | **78/81 (96 %)** |
+| pass^3 | 14/27 | **22/27** | 24/27 | **26/27** |
+| eindeutig | 32/42 | 39/42 | 39/42 | 39/42 |
+| mehrdeutig | 9/18 | 14/18 | 17/18 | 18/18 |
+| Fallen | 3/15 | **14/15** | 12/15 | **15/15** |
+| unbeantwortbar | 3/6 | 3/6 | 6/6 | 6/6 |
+
+Mit Glossar steigt Haiku 4.5 von 58 % auf 86 % richtige Antworten, Sonnet 5.5 von 91 % auf 96 %. Das Glossar behebt die Fallen (Haiku 3 → 14 von 15) und den Umsatz (E05, F02: 0 → 6 von 6 bei beiden Modellen), und es bringt Haiku dazu, bei „Kunden“ nachzufragen. Es hilft nicht, wo es nichts sagt (U01: Haiku liest den Abrechnungsweg weiter als Marketingkanal), und nicht, wo die SQL falsch ist (E12, M06 um einen Tag daneben).
+
+**Bekannte Grenze, E02:** Das Glossar sagt, „Kunde“ allein ist mehrdeutig und muss präzisiert werden. Sonnet hält sich daran und fragt bei „den fünf Ländern mit den meisten Kunden“ in allen drei Läufen nach; das Goldset erwartet die Zahl der Konten. Glossar und Goldset widersprechen sich hier, die Bewertung bleibt wie gemessen. Ohne diesen Widerspruch stünde Sonnet (c) bei 81/81.
+
+**Zusatzvariante, nur Haiku: Glossar + Spaltenverzeichnis, nach der Messung ergänzt und auf dieses Goldset hin optimiert.** Je missverständlicher Spalte eine neutrale Zeile (etwa `subscriptions.channel` = Abrechnungsweg), keine Liste fehlender Daten. Ergebnis: 69/81 (85 %) gegenüber 70/81 mit Glossar allein, also Rauschen; U01 1 von 3. Weil das Verzeichnis mit Wissen über die Testfragen geschrieben wurde, sagte selbst ein Gewinn wenig über neue Fragen (Overfitting aufs Testset); sauber prüfen ließe es sich nur mit einem Holdout aus Fragen, die beim Schreiben niemand kannte. Vorher/Nachher-Beispiele und Fehler-Rundgang: [evals/results.md](evals/results.md).
+
+## Kosten & Latenz
+Gemessen an je 81 Läufen je Modell und Variante:
+
+| | Haiku (b) | Haiku (c) | Sonnet (b) | Sonnet (c) |
+|---|---|---|---|---|
+| Kosten pro 1000 Requests | 6,54 USD | 8,51 USD | 9,51 USD | 10,14 USD |
+| Kosten pro 1000 richtige Antworten | 11,27 USD | **9,85 USD** | 10,41 USD | 10,53 USD |
+| p95-Latenz | 9,9 s | 9,4 s | 11,5 s | 8,1 s |
+| Qualität: richtig / pass^3 | 58 % / 14 von 27 | 86 % / 22 von 27 | 91 % / 24 von 27 | 96 % / 26 von 27 |
 
 - Sonnet kostet je Frage nur rund 45 % mehr, obwohl der Tokenpreis doppelt so hoch ist: Das Prompt-Caching greift (der Prompt liegt über Sonnets Minimum von 512 Tokens, aber unter Haikus 4.096), und Sonnet braucht weniger Aufrufe je Frage.
-- Sonnet 5.5: 9,51 USD pro 1000 Requests bei 11,5 s p95-Latenz.
+- Sonnet 5.5, nur Schema: 9,51 USD pro 1000 Requests bei 11,5 s p95-Latenz.
 - Je richtige Antwort ist Sonnet günstiger als Haiku: 10,41 gegenüber 11,27 USD pro 1000 richtige Antworten, weil Haiku 42 % seiner Antworten falsch beantwortet.
-- Pilot und voller Lauf von Branch (b) kosteten zusammen 1,48 USD.
+- Haiku 4.5 mit Glossar: 9,85 USD pro 1000 richtige Antworten, die günstigste Kombination. Der längere Prompt kostet je Frage mehr, dafür stimmen viel mehr Antworten.
+- Pilot und voller Lauf von Branch (b) kosteten zusammen 1,48 USD; Branch (c) mit Zusatzvariante 2,31 USD; die Anatomie eines Laufs 0,08 USD.
 - Branch (a) machte keine API-Aufrufe. Neon läuft im Free-Tier.
 
 ## Lokal ausführen
@@ -105,6 +123,10 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # einmalig: Datenbank,
 - **Realismus an den Zahlen prüfen.** Die erste Fassung der Login-Daten hatte 586 von 600 Kunden im September aktiv, weil Gratis-Nutzer nie einschliefen. Die Kennzahl wäre wertlos gewesen.
 - **Sitzungs-Zeitzone festlegen.** Datumsgrenzen wie `'2026-05-01'` hängen von der Zeitzone der Sitzung ab; alle Skripte setzen UTC.
 - **Das Modell schreibt manchmal `NOW()`**, obwohl der Prompt den 30.09.2026 als heute nennt. Solche Abfragen treffen die Referenz nur an diesem Tag, deshalb lief der volle Lauf am 30.09.2026. Beobachtet, nicht korrigiert.
+- **Definitionen schlagen Modellgröße.** Mit Glossar kommt das kleine Modell (86 %) fast an das große ohne Glossar heran (91 %) und ist je richtige Antwort die günstigste Wahl.
+- **Verhaltensregeln brauchen Fakten, die sie auslösen.** Ein zusätzlicher Satz im Prompt („frag nach, statt eine ähnliche Spalte zu nehmen“) änderte nichts (0/10), die Definitionen schon. Siehe [docs/ANATOMIE.md](docs/ANATOMIE.md).
+- **Glossar und Goldset müssen zusammenpassen.** Unser eigenes Glossar nennt „Kunde“ mehrdeutig, unser eigenes Goldset wertet E02 als eindeutig. Das bessere Modell folgte dem Glossar und verlor drei Punkte.
+- **Verbesserungen, die nach einem gescheiterten Test geschrieben werden, sind kein Beleg.** Das Spaltenverzeichnis ist auf dieses Goldset hin optimiert, so gekennzeichnet und bräuchte einen Holdout, um zu zählen.
 
 ## Was ich anders machen würde
 Folgt zum Abschluss des Use Cases.

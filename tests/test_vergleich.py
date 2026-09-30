@@ -116,3 +116,12 @@ def test_m06_mit_glossar_eindeutig():
 def test_unbekannte_antwortart():
     with pytest.raises(ValueError):
         bewerten(FRAGEN["E01"], {"art": "vielleicht"})
+
+
+def test_m06_mit_glossar_in_beiden_glossar_varianten():
+    m06 = FRAGEN["M06"]
+    zahl_374 = ergebnis(m06["mit_glossar"]["ergebnis"]["zeilen"])
+    rueckfrage = {"art": "rueckfrage", "zeilen": None}
+    assert not bewerten(m06, zahl_374, "schema")["richtig"] and bewerten(m06, rueckfrage, "schema")["richtig"]
+    for variante in ("glossar", "glossar_spalten"):
+        assert bewerten(m06, zahl_374, variante)["richtig"] and not bewerten(m06, rueckfrage, variante)["richtig"]

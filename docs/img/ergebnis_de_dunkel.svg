@@ -1,46 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="362" viewBox="0 0 720 362" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Anteil richtiger Antworten je Fragetyp">
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="400" viewBox="0 0 720 400" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Anteil richtiger Antworten je Fragetyp">
 <title>Anteil richtiger Antworten je Fragetyp</title>
 <defs>
 <pattern id="schraffur-0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#3987e5" fill-opacity="0.25"/><line x1="0" y1="0" x2="0" y2="6" stroke="#3987e5" stroke-width="3"/></pattern>
+<pattern id="kreuz-0" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#3987e5" fill-opacity="0.2"/><line x1="0" y1="0" x2="0" y2="7" stroke="#3987e5" stroke-width="2"/><line x1="0" y1="0" x2="7" y2="0" stroke="#3987e5" stroke-width="2"/></pattern>
 <pattern id="schraffur-1" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#199e70" fill-opacity="0.25"/><line x1="0" y1="0" x2="0" y2="6" stroke="#199e70" stroke-width="3"/></pattern>
+<pattern id="kreuz-1" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#199e70" fill-opacity="0.2"/><line x1="0" y1="0" x2="0" y2="7" stroke="#199e70" stroke-width="2"/><line x1="0" y1="0" x2="7" y2="0" stroke="#199e70" stroke-width="2"/></pattern>
 </defs>
 <text x="44" y="24" font-size="15" font-weight="600" fill="#e6edf3">Anteil richtiger Antworten je Fragetyp</text>
-<rect x="44" y="38" width="12" height="12" rx="2" fill="#3987e5"/>
-<text x="62" y="48" font-size="12" fill="#e6edf3">Haiku 4.5 · nur Schema</text>
-<rect x="304" y="38" width="12" height="12" rx="2" fill="#199e70"/>
-<text x="322" y="48" font-size="12" fill="#e6edf3">Sonnet 5.5 · nur Schema</text>
-<line x1="44" x2="704" y1="306.0" y2="306.0" stroke="#30363d" stroke-width="1"/>
-<text x="36" y="310.0" font-size="11" text-anchor="end" fill="#9198a1">0 %</text>
-<line x1="44" x2="704" y1="251.0" y2="251.0" stroke="#30363d" stroke-width="1"/>
-<text x="36" y="255.0" font-size="11" text-anchor="end" fill="#9198a1">25 %</text>
-<line x1="44" x2="704" y1="196.0" y2="196.0" stroke="#30363d" stroke-width="1"/>
-<text x="36" y="200.0" font-size="11" text-anchor="end" fill="#9198a1">50 %</text>
-<line x1="44" x2="704" y1="141.0" y2="141.0" stroke="#30363d" stroke-width="1"/>
-<text x="36" y="145.0" font-size="11" text-anchor="end" fill="#9198a1">75 %</text>
-<line x1="44" x2="704" y1="86.0" y2="86.0" stroke="#30363d" stroke-width="1"/>
-<text x="36" y="90.0" font-size="11" text-anchor="end" fill="#9198a1">100 %</text>
-<path d="M99.5,306 V142.4 Q99.5,138.4 103.5,138.4 H119.5 Q123.5,138.4 123.5,142.4 V306 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 32/42 Läufe</title></path>
-<text x="111.5" y="132.4" font-size="10.5" text-anchor="middle" fill="#e6edf3">76 %</text>
-<path d="M129.5,306 V105.7 Q129.5,101.7 133.5,101.7 H149.5 Q153.5,101.7 153.5,105.7 V306 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 39/42 Läufe</title></path>
-<text x="141.5" y="95.7" font-size="10.5" text-anchor="middle" fill="#e6edf3">93 %</text>
-<text x="126.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">eindeutig</text>
-<text x="126.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">14 Fragen × 3</text>
-<path d="M264.5,306 V200.0 Q264.5,196.0 268.5,196.0 H284.5 Q288.5,196.0 288.5,200.0 V306 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 9/18 Läufe</title></path>
-<text x="276.5" y="190.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">50 %</text>
-<path d="M294.5,306 V102.2 Q294.5,98.2 298.5,98.2 H314.5 Q318.5,98.2 318.5,102.2 V306 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 17/18 Läufe</title></path>
-<text x="306.5" y="92.2" font-size="10.5" text-anchor="middle" fill="#e6edf3">94 %</text>
-<text x="291.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">mehrdeutig</text>
-<text x="291.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">6 Fragen × 3</text>
-<path d="M429.5,306 V266.0 Q429.5,262.0 433.5,262.0 H449.5 Q453.5,262.0 453.5,266.0 V306 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 3/15 Läufe</title></path>
-<text x="441.5" y="256.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">20 %</text>
-<path d="M459.5,306 V134.0 Q459.5,130.0 463.5,130.0 H479.5 Q483.5,130.0 483.5,134.0 V306 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 12/15 Läufe</title></path>
-<text x="471.5" y="124.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">80 %</text>
-<text x="456.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">Fallen</text>
-<text x="456.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">5 Fragen × 3</text>
-<path d="M594.5,306 V200.0 Q594.5,196.0 598.5,196.0 H614.5 Q618.5,196.0 618.5,200.0 V306 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 3/6 Läufe</title></path>
-<text x="606.5" y="190.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">50 %</text>
-<path d="M624.5,306 V90.0 Q624.5,86.0 628.5,86.0 H644.5 Q648.5,86.0 648.5,90.0 V306 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 6/6 Läufe</title></path>
-<text x="636.5" y="80.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">100 %</text>
-<text x="621.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">unbeantwortbar</text>
-<text x="621.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">2 Fragen × 3</text>
+<text x="44" y="48" font-size="12" font-weight="600" fill="#e6edf3">Haiku 4.5</text>
+<rect x="134" y="38" width="12" height="12" rx="2" fill="#3987e5"/>
+<text x="152" y="48" font-size="12" fill="#e6edf3">nur Schema</text>
+<rect x="324" y="38" width="12" height="12" rx="2" fill="url(#schraffur-0)"/>
+<text x="342" y="48" font-size="12" fill="#e6edf3">Schema + Glossar</text>
+<rect x="514" y="38" width="12" height="12" rx="2" fill="url(#kreuz-0)"/>
+<text x="532" y="48" font-size="12" fill="#e6edf3">+ Spaltenverzeichnis*</text>
+<text x="44" y="68" font-size="12" font-weight="600" fill="#e6edf3">Sonnet 5.5</text>
+<rect x="134" y="58" width="12" height="12" rx="2" fill="#199e70"/>
+<text x="152" y="68" font-size="12" fill="#e6edf3">nur Schema</text>
+<rect x="324" y="58" width="12" height="12" rx="2" fill="url(#schraffur-1)"/>
+<text x="342" y="68" font-size="12" fill="#e6edf3">Schema + Glossar</text>
+<line x1="44" x2="704" y1="326.0" y2="326.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="330.0" font-size="11" text-anchor="end" fill="#9198a1">0 %</text>
+<line x1="44" x2="704" y1="271.0" y2="271.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="275.0" font-size="11" text-anchor="end" fill="#9198a1">25 %</text>
+<line x1="44" x2="704" y1="216.0" y2="216.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="220.0" font-size="11" text-anchor="end" fill="#9198a1">50 %</text>
+<line x1="44" x2="704" y1="161.0" y2="161.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="165.0" font-size="11" text-anchor="end" fill="#9198a1">75 %</text>
+<line x1="44" x2="704" y1="106.0" y2="106.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="110.0" font-size="11" text-anchor="end" fill="#9198a1">100 %</text>
+<path d="M54.5,326 V162.4 Q54.5,158.4 58.5,158.4 H74.5 Q78.5,158.4 78.5,162.4 V326 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 32/42 Läufe</title></path>
+<text x="66.5" y="152.4" font-size="10.5" text-anchor="middle" fill="#e6edf3">76 %</text>
+<path d="M84.5,326 V125.7 Q84.5,121.7 88.5,121.7 H104.5 Q108.5,121.7 108.5,125.7 V326 Z" fill="url(#schraffur-0)"><title>Haiku 4.5 · Schema + Glossar: 39/42 Läufe</title></path>
+<text x="96.5" y="115.7" font-size="10.5" text-anchor="middle" fill="#e6edf3">93 %</text>
+<path d="M114.5,326 V131.0 Q114.5,127.0 118.5,127.0 H134.5 Q138.5,127.0 138.5,131.0 V326 Z" fill="url(#kreuz-0)"><title>Haiku 4.5 · + Spaltenverzeichnis*: 38/42 Läufe</title></path>
+<text x="126.5" y="121.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">90 %</text>
+<path d="M144.5,326 V125.7 Q144.5,121.7 148.5,121.7 H164.5 Q168.5,121.7 168.5,125.7 V326 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 39/42 Läufe</title></path>
+<text x="156.5" y="115.7" font-size="10.5" text-anchor="middle" fill="#e6edf3">93 %</text>
+<path d="M174.5,326 V125.7 Q174.5,121.7 178.5,121.7 H194.5 Q198.5,121.7 198.5,125.7 V326 Z" fill="url(#schraffur-1)"><title>Sonnet 5.5 · Schema + Glossar: 39/42 Läufe</title></path>
+<text x="186.5" y="115.7" font-size="10.5" text-anchor="middle" fill="#e6edf3">93 %</text>
+<text x="126.5" y="346" font-size="12" text-anchor="middle" fill="#e6edf3">eindeutig</text>
+<text x="126.5" y="362" font-size="11" text-anchor="middle" fill="#9198a1">14 Fragen × 3</text>
+<path d="M219.5,326 V220.0 Q219.5,216.0 223.5,216.0 H239.5 Q243.5,216.0 243.5,220.0 V326 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 9/18 Läufe</title></path>
+<text x="231.5" y="210.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">50 %</text>
+<path d="M249.5,326 V158.9 Q249.5,154.9 253.5,154.9 H269.5 Q273.5,154.9 273.5,158.9 V326 Z" fill="url(#schraffur-0)"><title>Haiku 4.5 · Schema + Glossar: 14/18 Läufe</title></path>
+<text x="261.5" y="148.9" font-size="10.5" text-anchor="middle" fill="#e6edf3">78 %</text>
+<path d="M279.5,326 V158.9 Q279.5,154.9 283.5,154.9 H299.5 Q303.5,154.9 303.5,158.9 V326 Z" fill="url(#kreuz-0)"><title>Haiku 4.5 · + Spaltenverzeichnis*: 14/18 Läufe</title></path>
+<text x="291.5" y="148.9" font-size="10.5" text-anchor="middle" fill="#e6edf3">78 %</text>
+<path d="M309.5,326 V122.2 Q309.5,118.2 313.5,118.2 H329.5 Q333.5,118.2 333.5,122.2 V326 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 17/18 Läufe</title></path>
+<text x="321.5" y="112.2" font-size="10.5" text-anchor="middle" fill="#e6edf3">94 %</text>
+<path d="M339.5,326 V110.0 Q339.5,106.0 343.5,106.0 H359.5 Q363.5,106.0 363.5,110.0 V326 Z" fill="url(#schraffur-1)"><title>Sonnet 5.5 · Schema + Glossar: 18/18 Läufe</title></path>
+<text x="351.5" y="100.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">100 %</text>
+<text x="291.5" y="346" font-size="12" text-anchor="middle" fill="#e6edf3">mehrdeutig</text>
+<text x="291.5" y="362" font-size="11" text-anchor="middle" fill="#9198a1">6 Fragen × 3</text>
+<path d="M384.5,326 V286.0 Q384.5,282.0 388.5,282.0 H404.5 Q408.5,282.0 408.5,286.0 V326 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 3/15 Läufe</title></path>
+<text x="396.5" y="276.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">20 %</text>
+<path d="M414.5,326 V124.7 Q414.5,120.7 418.5,120.7 H434.5 Q438.5,120.7 438.5,124.7 V326 Z" fill="url(#schraffur-0)"><title>Haiku 4.5 · Schema + Glossar: 14/15 Läufe</title></path>
+<text x="426.5" y="114.7" font-size="10.5" text-anchor="middle" fill="#e6edf3">93 %</text>
+<path d="M444.5,326 V139.3 Q444.5,135.3 448.5,135.3 H464.5 Q468.5,135.3 468.5,139.3 V326 Z" fill="url(#kreuz-0)"><title>Haiku 4.5 · + Spaltenverzeichnis*: 13/15 Läufe</title></path>
+<text x="456.5" y="129.3" font-size="10.5" text-anchor="middle" fill="#e6edf3">87 %</text>
+<path d="M474.5,326 V154.0 Q474.5,150.0 478.5,150.0 H494.5 Q498.5,150.0 498.5,154.0 V326 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 12/15 Läufe</title></path>
+<text x="486.5" y="144.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">80 %</text>
+<path d="M504.5,326 V110.0 Q504.5,106.0 508.5,106.0 H524.5 Q528.5,106.0 528.5,110.0 V326 Z" fill="url(#schraffur-1)"><title>Sonnet 5.5 · Schema + Glossar: 15/15 Läufe</title></path>
+<text x="516.5" y="100.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">100 %</text>
+<text x="456.5" y="346" font-size="12" text-anchor="middle" fill="#e6edf3">Fallen</text>
+<text x="456.5" y="362" font-size="11" text-anchor="middle" fill="#9198a1">5 Fragen × 3</text>
+<path d="M549.5,326 V220.0 Q549.5,216.0 553.5,216.0 H569.5 Q573.5,216.0 573.5,220.0 V326 Z" fill="#3987e5"><title>Haiku 4.5 · nur Schema: 3/6 Läufe</title></path>
+<text x="561.5" y="210.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">50 %</text>
+<path d="M579.5,326 V220.0 Q579.5,216.0 583.5,216.0 H599.5 Q603.5,216.0 603.5,220.0 V326 Z" fill="url(#schraffur-0)"><title>Haiku 4.5 · Schema + Glossar: 3/6 Läufe</title></path>
+<text x="591.5" y="210.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">50 %</text>
+<path d="M609.5,326 V183.3 Q609.5,179.3 613.5,179.3 H629.5 Q633.5,179.3 633.5,183.3 V326 Z" fill="url(#kreuz-0)"><title>Haiku 4.5 · + Spaltenverzeichnis*: 4/6 Läufe</title></path>
+<text x="621.5" y="173.3" font-size="10.5" text-anchor="middle" fill="#e6edf3">67 %</text>
+<path d="M639.5,326 V110.0 Q639.5,106.0 643.5,106.0 H659.5 Q663.5,106.0 663.5,110.0 V326 Z" fill="#199e70"><title>Sonnet 5.5 · nur Schema: 6/6 Läufe</title></path>
+<text x="651.5" y="100.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">100 %</text>
+<path d="M669.5,326 V110.0 Q669.5,106.0 673.5,106.0 H689.5 Q693.5,106.0 693.5,110.0 V326 Z" fill="url(#schraffur-1)"><title>Sonnet 5.5 · Schema + Glossar: 6/6 Läufe</title></path>
+<text x="681.5" y="100.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">100 %</text>
+<text x="621.5" y="346" font-size="12" text-anchor="middle" fill="#e6edf3">unbeantwortbar</text>
+<text x="621.5" y="362" font-size="11" text-anchor="middle" fill="#9198a1">2 Fragen × 3</text>
+<text x="44" y="392" font-size="11" fill="#9198a1">* nach der Messung ergänzt, auf dieses Goldset hin optimiert</text>
 </svg>

@@ -158,3 +158,45 @@ zu sehen sein.
 - Ergebnis „ein Satz Prompt“: 0/10 bei Haiku (U01, M02), kein Unterschied zum vollen Lauf. Für Branch (c) folgt daraus:
   Das Glossar liefert Fakten (was `channel` bedeutet, was fehlt, welche Kundendefinitionen es gibt), keine weiteren
   Verhaltensregeln. Details: docs/ANATOMIE.md.
+
+## 2026-09-30: Branch (c): Glossar-Entwurf unverändert eingefroren
+
+Entscheidung von Julian: Die Hauptmessung von Branch (c) nutzt den Glossar-Entwurf aus Branch (a) unverändert. Er
+wurde vor jeder Messung geschrieben, der Vergleich (b) gegen (c) misst also den Wert eines vorab festgelegten Glossars.
+`docs/GLOSSAR.md` ist ab jetzt eingefroren: SHA-256 `e3d770e9c4edfdd5a0f9e978a920baaf1cf29f69d73d99dcb559c8b62aa38393`, letzter Commit der Datei
+`87867e2`. Die Datei wird auch nicht mit einem Stand-Vermerk versehen, weil ihr Inhalt wörtlich in den Prompt
+geht.
+
+- Voller Lauf: Haiku 4.5 und Sonnet 5.5, je 27 × 3, Variante `glossar`, Budgets 1,50 und 3,00 USD, freigegeben.
+  Schätzung ca. 0,75 und 1,10 USD (Prompt mit Glossar: Haiku 2.898 Tokens, weiter unter der Cache-Schwelle; Sonnet
+  3.828 Tokens).
+- Regeln und Goldset unverändert. Mit Glossar gilt für M06 der vorab festgelegte `mit_glossar`-Eintrag (eindeutig, 374).
+- Kein Pilot: Regeln und Harness sind kalibriert und eingefroren, das Glossar ändert nur den Prompt.
+- Keine Liste fehlender Daten (etwa „nicht erfasst: Marketingkanal, NPS“), in keiner Variante: Das wäre die Antwort auf
+  U01 und U02, direkt in den Prompt geschrieben.
+
+## 2026-09-30: Zusatzvariante „glossar_spalten“: nach der Messung ergänzt, auf dieses Goldset hin optimiert
+
+Entscheidung von Julian: Neben der Hauptmessung läuft eine Zusatzvariante, nur mit Haiku 4.5, 27 × 3, Budget 1,50 USD.
+Prompt = Schema + Glossar-Entwurf (unverändert) + `docs/SPALTEN.md`: ein neutrales Spaltenverzeichnis, eine Zeile je
+Spalte, deren Name missverstanden werden kann (etwa `subscriptions.channel` = Abrechnungsweg). Keine Liste fehlender
+Daten (Test belegt, dass „Marketing“, „NPS“, „nicht erfasst“, „Umfrage“ nicht vorkommen). SHA-256 `b3be9a4dbded3b1eb94ac1a39209dc87728bad29ec1be6e237729752d731fe63`.
+
+**Kennzeichnung:** Das Spaltenverzeichnis ist erst nach der Messung von Branch (b) entstanden, mit Wissen darüber, woran
+die Modelle scheitern (U01: `channel`). Es ist damit auf dieses Goldset hin optimiert. Ergebnisse dieser Variante sind
+in results.md, README und Grafik (Kreuzschraffur mit Sternchen und Fußnote) so gekennzeichnet und nicht mit (b) und (c)
+gleichrangig. Eine saubere Messung bräuchte neue Fragen, die beim Schreiben des Verzeichnisses unbekannt waren (Holdout).
+
+Bewertung: M06 gilt wie in der Glossar-Variante als eindeutig (374), weil das Glossar enthalten ist. Sonst unverändert.
+Schätzung: Prompt bei Haiku 3.439 Tokens (Glossar allein 2.898, nur Schema 1.734), weiter unter der Cache-Schwelle; ca. 0,85 USD.
+
+## 2026-09-30: Ergebnis Branch (c) und Zusatzvariante
+
+- Hauptmessung mit eingefrorenem Glossar: Haiku 70/81 (86 %), Sonnet 78/81 (96 %). Kosten 0,69 und 0,82 USD.
+- Zusatzvariante (Haiku, Glossar + Spaltenverzeichnis, nach der Messung ergänzt): 69/81 (85 %), Kosten 0,80 USD.
+  Kein messbarer Gewinn gegenüber dem Glossar allein.
+- **Bekannte Grenze des Goldsets, E02:** Das Glossar erklärt „Kunde“ allein für mehrdeutig. Sonnet fragt deshalb bei E02
+  nach („die meisten Kunden je Land“), das Goldset erwartet die Zahl der Konten. Glossar und Goldset widersprechen sich.
+  Keine Änderung an Regeln, Goldset oder Bewertung: E02 zählt als falsch. Für eine nächste Goldset-Fassung wäre E02 als
+  „Konten“ zu formulieren oder als mehrdeutig zu führen; beides erst mit neuer Messung.
+- Keine Regeländerung nach den Läufen.
