@@ -167,3 +167,27 @@ def test_annahmen_mit_badges_und_ehrlicher_beschriftung(client):
     k = c.get(f"/gallery?lauf={lauf_name}&frage=E05&wdh=1").text
     assert "Assumptions <span class=\"klein\">(as stated by the model)</span>" in k
     assert "⚠ not found in SQL" in k and "✓ verified in SQL" in k
+
+
+def test_app_verweigert_jede_rolle_ausser_analyst_ro():
+    """Guardrail (Branch e): Wird die App versehentlich mit einer anderen URL betrieben (etwa analytics_admin),
+    beantwortet sie keine Frage. Geprüft ohne Datenbank und ohne API mit einer Fake-Verbindung."""
+    import threading
+    from app.dienst import Copilot
+
+    class Verbindung:
+        def __init__(self, rolle):
+            self.rolle = rolle
+
+        def execute(self, _):
+            return self
+
+        def fetchone(self):
+            return (self.rolle,)
+
+    c = object.__new__(Copilot)
+    c._geprueft, c._sperre = False, threading.Lock()
+    with pytest.raises(RuntimeError, match="nur mit der Rolle analyst_ro"):
+        c._rolle_pruefen(Verbindung("analytics_admin"))
+    c._rolle_pruefen(Verbindung("analyst_ro"))
+    assert c._geprueft

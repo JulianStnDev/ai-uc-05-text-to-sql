@@ -306,3 +306,12 @@ def test_harte_kostengrenze_je_frage(ro):
     c = FakeClient([antwort(werkzeug("sql_ausfuehren", sql="SELECT 1"), u=teuer),
                     antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))])
     assert beantworten(c, ro, "x", "haiku")["fehler"] is None   # ohne Grenze (Messläufe) unverändert
+
+
+def test_nur_eine_anweisung_je_ausfuehrung(ro):
+    from copilot import mehrere_anweisungen, sql_ausfuehren
+    assert mehrere_anweisungen("SELECT 1; SELECT 2") and mehrere_anweisungen("SELECT 1;DELETE FROM refunds")
+    assert not mehrere_anweisungen("SELECT 1;") and not mehrere_anweisungen("SELECT ';' AS x")
+    assert not mehrere_anweisungen("SELECT 1 -- ; kommentar")
+    e = sql_ausfuehren(ro, "SELECT 1; SELECT 2")
+    assert not e["ok"] and "Nur eine SQL-Anweisung" in e["fehler"]

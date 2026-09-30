@@ -12,6 +12,7 @@ zusätzlich docs/SPALTEN.md. DATA_NOTES.md und DATENRUNDGANG.md gelangen nie in 
 """
 
 import json
+import re
 import time
 from decimal import Decimal
 from pathlib import Path
@@ -80,8 +81,17 @@ def wert(v):
     return str(v) if isinstance(v, Decimal) else (v.isoformat() if hasattr(v, "isoformat") else v)
 
 
+def mehrere_anweisungen(sql: str) -> bool:
+    """True, wenn nach dem Entfernen von Kommentaren und String-Literalen mehr als eine Anweisung übrig bleibt."""
+    ohne = re.sub(r"'(?:[^']|'')*'", "''", re.sub(r"--[^\n]*|/\*.*?\*/", " ", sql, flags=re.S))
+    return bool(re.search(r";\s*\S", ohne))
+
+
 def sql_ausfuehren(conn, sql: str) -> dict:
-    """{"ok": True, "spalten", "zeilen", "anzahl"} oder {"ok": False, "fehler"}. Schreibversuche weist die DB ab."""
+    """{"ok": True, "spalten", "zeilen", "anzahl"} oder {"ok": False, "fehler"}. Schreibversuche weist die DB ab.
+    Guardrail (Branch e): nur eine Anweisung je Ausführung, sonst wird gar nichts ausgeführt."""
+    if mehrere_anweisungen(sql):
+        return {"ok": False, "fehler": "Nur eine SQL-Anweisung je Ausführung erlaubt. Bitte eine einzelne SELECT-Abfrage."}
     try:
         cur = conn.execute(sql)
         if cur.description is None:

@@ -130,6 +130,9 @@ What the answer card makes visible, following [docs/ANTWORTEN.md](docs/ANTWORTEN
 | **Compare schema only vs. + glossary (E05)** | **Compare Haiku vs. Sonnet (U01)** |
 | ![Side by side: schema only gives 1,344.34 without refunds, with glossary 1,224.34](docs/img/app_vergleich_glossar_e05.png) | ![Side by side: Haiku uses the billing channel as a proxy for the marketing channel and says so; Sonnet answers "no data"](docs/img/app_vergleich_modelle_u01.png) |
 
+## Guardrails
+Three layers stand between a question and the data: the model, the harness/app, and the database role `analyst_ro`. [docs/GUARDRAILS.md](docs/GUARDRAILS.md) maps attack types to the layer that stops them, each backed by a deterministic test (no model, no API cost). The database stops writes (twice: privileges and read-only), personal data (`customers.email` is excluded by column privileges; the model still sees the column in the schema, so the database visibly does the work), file and program access, other databases and long queries (15 s). The harness/app stops statement chains, costs above $0.05 per question, $0.25 per session and $3.00 per month, and running with any role other than `analyst_ro`. Most attack types have only one layer; `email` is protected by column privileges alone. The model column is not measured yet: the attack demo against the model moves to UC6.
+
 ## Running Locally
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt

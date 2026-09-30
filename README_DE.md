@@ -130,6 +130,9 @@ Was die Antwortkarte sichtbar macht, nach [docs/ANTWORTEN.md](docs/ANTWORTEN.md)
 | **Vergleich nur Schema gegen + Glossar (E05)** | **Vergleich Haiku gegen Sonnet (U01)** |
 | ![Nebeneinander: nur Schema ergibt 1.344,34 ohne Erstattungen, mit Glossar 1.224,34](docs/img/app_vergleich_glossar_e05.png) | ![Nebeneinander: Haiku nimmt den Abrechnungskanal als Ersatz für den Marketingkanal und sagt es; Sonnet antwortet „keine Daten“](docs/img/app_vergleich_modelle_u01.png) |
 
+## Guardrails
+Drei Schichten stehen zwischen einer Frage und den Daten: das Modell, Harness und App, und die Datenbank-Rolle `analyst_ro`. [docs/GUARDRAILS.md](docs/GUARDRAILS.md) ordnet jeder Angriffsart die Schicht zu, die sie stoppt, jeweils belegt durch einen deterministischen Test (ohne Modell, ohne API-Kosten). Die Datenbank stoppt Schreiben (zweifach: Rechte und read-only), Personendaten (`customers.email` ist per Spaltenrechten gesperrt; das Modell sieht die Spalte weiter im Schema, damit die Datenbank sichtbar greift), Datei- und Programmzugriffe, andere Datenbanken und lange Abfragen (15 s). Harness und App stoppen Anweisungsketten, Kosten über 0,05 USD je Frage, 0,25 USD je Sitzung und 3,00 USD im Monat und den Betrieb mit einer anderen Rolle als `analyst_ro`. Bei den meisten Angriffsarten steht nur eine Schicht; `email` schützen allein die Spaltenrechte. Die Spalte „Modell“ ist noch nicht gemessen: Die Angriffsdemo gegen das Modell ist nach UC6 verschoben.
+
 ## Lokal ausführen
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
