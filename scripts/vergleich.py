@@ -19,6 +19,8 @@ Zeilen-Vergleich:
 - Spalten: Spaltennamen und Spaltenreihenfolge egal; zusätzliche Spalten erlaubt (etwa ein Anteil neben der Anzahl).
   Jede erwartete Zeile muss mit ihren Werten in genau einer Ergebniszeile vorkommen.
 - Zeilen: Die Anzahl muss stimmen. Reihenfolge egal, außer die Frage hat `reihenfolge: True` (Top-N).
+- Top-1 (`top1: True`, E07 und E10): Nur die erste Ergebniszeile wird verglichen, die restliche Rangliste darf dabei
+  sein. Geändert nach dem Pilot am 30.09.2026 (docs/decisions.md), ab dem vollen Lauf eingefroren.
 """
 
 import re
@@ -78,9 +80,12 @@ def zeile_passt(erwartet: list, ist: list, prozent_spalten: set[int]) -> bool:
     return False
 
 
-def zeilen_gleich(erwartet: dict, ist: list[list], reihenfolge: bool = False) -> bool:
-    """erwartet: {"spalten": [...], "zeilen": [[...]]} aus goldset.json; ist: Ergebniszeilen des Copiloten."""
+def zeilen_gleich(erwartet: dict, ist: list[list], reihenfolge: bool = False, top1: bool = False) -> bool:
+    """erwartet: {"spalten": [...], "zeilen": [[...]]} aus goldset.json; ist: Ergebniszeilen des Copiloten.
+    top1: nur die erste Ergebniszeile zählt (gefragt ist der Spitzenwert, nicht die Rangliste)."""
     soll = erwartet["zeilen"]
+    if top1:
+        ist = ist[:1]
     if len(soll) != len(ist):
         return False
     prozent = {k for k, s in enumerate(erwartet["spalten"]) if "prozent" in s.lower()}
@@ -118,5 +123,5 @@ def bewerten(frage: dict, antwort: dict, variante: str = "schema") -> dict:
         return {"richtig": ok, "grund": "keine Daten erkannt" if ok else "Ersatz-Abfrage statt „keine Daten“"}
     if art != "ergebnis":
         return {"richtig": False, "grund": f"{art} statt Ergebnis"}
-    ok = zeilen_gleich(ergebnis, antwort.get("zeilen") or [], frage.get("reihenfolge", False))
+    ok = zeilen_gleich(ergebnis, antwort.get("zeilen") or [], frage.get("reihenfolge", False), frage.get("top1", False))
     return {"richtig": ok, "grund": "Ergebnis stimmt" if ok else "Ergebnis weicht ab"}

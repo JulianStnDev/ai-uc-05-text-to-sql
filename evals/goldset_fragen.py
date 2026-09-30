@@ -6,7 +6,8 @@ evals/goldset.json (+ evals/goldset.md zur Durchsicht). Hier stehen nur Fragen u
 Typen: eindeutig (14) | mehrdeutig (6, richtige Antwort ist eine Rückfrage, dazu die Deutungen) | falle (5)
        | unbeantwortbar (2, richtige Antwort: keine Daten dazu; eine Ersatz-Abfrage mit ähnlicher Spalte ist falsch).
 IDs bleiben stabil: E09 wurde bei der Durchsicht (30.09.2026) zu M06, M02 wurde ersetzt.
-`reihenfolge: True` heißt: Die Reihenfolge der Zeilen gehört zur Antwort. `mit_glossar` gilt nur in Branch (c).
+`reihenfolge: True` heißt: Die Reihenfolge der Zeilen gehört zur Antwort. `top1: True` heißt: Gefragt ist nur der
+Spitzenwert; bewertet wird die erste Ergebniszeile, weitere Zeilen (die restliche Rangliste) sind erlaubt. `mit_glossar` gilt nur in Branch (c).
 Vergleichsregeln: scripts/vergleich.py.
 Fallen: doppelabbuchung, store, kuendigung, erstattung, zeitzone, irrefuehrende_spalte (docs/DATA_NOTES.md).
 Bei Fallen-Fragen ist `naiv_sql` die Referenz-SQL mit genau dem einen Fehler der Falle.
@@ -40,7 +41,7 @@ FRAGEN = [
      "frage": "Wie viele Pro-Abos wurden im ersten Quartal 2026 abgeschlossen, aufgeteilt nach Kanal?",
      "sql": "SELECT channel, count(*) AS neue_abos FROM subscriptions "
             "WHERE started_at >= '2026-01-01' AND started_at < '2026-04-01' GROUP BY channel ORDER BY channel"},
-    {"id": "E04", "typ": "eindeutig", "fallen": ["irrefuehrende_spalte"],
+    {"id": "E04", "typ": "eindeutig", "fallen": ["kuendigung"],
      "frage": "Wie viele Kunden hatten am 30. September 2026 ein laufendes Jahresabo?",
      "sql": f"SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE plan = 'pro_annual' AND {LAUFEND_AM_STICHTAG}"},
     {"id": "E05", "typ": "eindeutig", "fallen": ["doppelabbuchung", "store", "erstattung"],
@@ -48,10 +49,11 @@ FRAGEN = [
      "sql": f"{UMSATZ}\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-05-01' AND zeit < '2026-06-01'"},
     {"id": "E06", "typ": "eindeutig", "fallen": ["doppelabbuchung", "erstattung"],
      "frage": "Wie viel Geld haben wir im Gesamtzeitraum an Kunden erstattet, ohne die Erstattungen von Doppelabbuchungen?",
-     "sql": "SELECT count(*) AS erstattungen, sum(amount_usd) AS summe_usd FROM refunds WHERE reason <> 'duplicate_charge'"},
+     "sql": "SELECT sum(amount_usd) AS summe_usd FROM refunds WHERE reason <> 'duplicate_charge'"},
     {"id": "E07", "typ": "eindeutig", "fallen": [],
      "frage": "Welcher Kündigungsgrund wurde am häufigsten angegeben, und wie oft?",
-     "sql": "SELECT reason, count(*) AS anzahl FROM cancellations GROUP BY reason ORDER BY anzahl DESC, reason LIMIT 1"},
+     "sql": "SELECT reason, count(*) AS anzahl FROM cancellations GROUP BY reason ORDER BY anzahl DESC, reason LIMIT 1",
+     "top1": True},
     {"id": "E08", "typ": "eindeutig", "fallen": [],
      "frage": "Wie viele Kunden haben sich im Juli 2026 mindestens einmal eingeloggt?",
      "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins "
@@ -59,7 +61,8 @@ FRAGEN = [
     {"id": "E10", "typ": "eindeutig", "fallen": [],
      "frage": "Über welche Plattform kamen im August 2026 die meisten Logins, und wie viele waren es?",
      "sql": "SELECT platform, count(*) AS logins FROM logins WHERE logged_in_at >= '2026-08-01' AND logged_in_at < '2026-09-01' "
-            "GROUP BY platform ORDER BY logins DESC LIMIT 1"},
+            "GROUP BY platform ORDER BY logins DESC LIMIT 1",
+     "top1": True},
     {"id": "E11", "typ": "eindeutig", "fallen": [],
      "frage": "Wie viele Web-Zahlungen sind im Gesamtzeitraum fehlgeschlagen?",
      "sql": "SELECT count(*) AS fehlgeschlagen FROM payments WHERE status = 'failed'"},
