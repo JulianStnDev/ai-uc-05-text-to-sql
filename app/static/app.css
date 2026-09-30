@@ -115,3 +115,5 @@ pre { background: var(--code); padding: 12px; border-radius: 8px; overflow-x: au
 .marke-gut { color: var(--gut); }
 .marke-schlecht { color: var(--schlecht); }
 #galerie-karte { position: sticky; top: 12px; }
+.login { max-width: 560px; }
+.login h1 { font-size: 22px; }

@@ -191,3 +191,34 @@ def test_app_verweigert_jede_rolle_ausser_analyst_ro():
         c._rolle_pruefen(Verbindung("analytics_admin"))
     c._rolle_pruefen(Verbindung("analyst_ro"))
     assert c._geprueft
+
+
+def test_zugangscode_sperrt_nur_die_live_seiten(tmp_path):
+    fake = Fake(lauf())
+    c = TestClient(create_app(cfg(tmp_path, zugangscode="richtig-langer-code"), antwort_fn=fake), follow_redirects=False)
+    assert c.get("/").status_code == 303 and c.get("/").headers["location"] == "/login?weiter=/"
+    assert c.get("/compare").status_code == 303
+    assert c.post("/antwort", data={"frage": "a"}).status_code == 403 and fake.aufrufe == []
+    for offen in ("/gallery", "/health", "/login", "/robots.txt", "/static/app.css"):
+        assert c.get(offen).status_code == 200, offen
+    r = c.post("/login", data={"code": "falsch", "weiter": "/"})
+    assert "fehler=1" in r.headers["location"] and "uc5_zugang" not in r.cookies
+    r = c.post("/login", data={"code": "richtig-langer-code", "weiter": "//boese.example"})
+    assert r.headers["location"] == "/"                                   # kein Umleiten auf fremde Seiten
+    assert "richtig-langer-code" not in r.headers.get("set-cookie", "")  # Cookie enthält nur die Signatur
+    assert c.get("/").status_code == 200
+    assert "1.224,34" in c.post("/antwort", data={"frage": "a"}).text and len(fake.aufrufe) == 1
+
+
+def test_ohne_zugangscode_ist_lokal_alles_offen(client):
+    c, _ = client()
+    assert c.get("/").status_code == 200 and "runs without an access code" in c.get("/login").text
+
+
+def test_zu_kurzer_zugangscode_startet_nicht(monkeypatch):
+    from app.einstellungen import aus_umgebung
+    monkeypatch.setenv("ANALYTICS_RO_URL", "postgresql://x")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    monkeypatch.setenv("ZUGANGSCODE", "kurz")
+    with pytest.raises(RuntimeError, match="mindestens 12"):
+        aus_umgebung()

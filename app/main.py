@@ -17,7 +17,7 @@ from typing import Callable
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -27,6 +27,8 @@ from .einstellungen import Einstellungen, aus_umgebung
 
 HIER = Path(__file__).resolve().parent
 COOKIE = "uc5_sitzung"
+ZUGANG = "uc5_zugang"
+OFFEN = ("/gallery", "/login", "/health", "/robots.txt", "/static")  # ohne Zugangscode erreichbar, ohne API-Kosten
 MAX_FRAGE = 300
 BEISPIELE = ["E05", "F04", "E04", "F03", "M02", "M06", "U01", "U02"]
 VERGLEICHE = {"glossar": [("haiku", "schema"), ("haiku", "glossar")],
@@ -56,6 +58,11 @@ def kurz(zeilen) -> str:
     return " · ".join(" ".join(zahl(v) for v in z) for z in (zeilen or [])[:5]) + (" …" if len(zeilen or []) > 5 else "")
 
 
+def _zugang_wert(code: str, secret: str) -> str:
+    """Das Cookie enthält nicht den Code, sondern eine HMAC-Signatur darüber (wie UC7)."""
+    return hmac.new(secret.encode(), f"zugang:{code}".encode(), hashlib.sha256).hexdigest()
+
+
 def create_app(einstellungen: Einstellungen | None = None, antwort_fn: Callable | None = None) -> FastAPI:
     """antwort_fn(frage, modell, variante) -> Lauf wie scripts/copilot.beantworten. Standard: das echte Modell."""
     if einstellungen is None:
@@ -75,6 +82,19 @@ def create_app(einstellungen: Einstellungen | None = None, antwort_fn: Callable 
     vorlagen.env.filters.update(zahl=zahl, kurz=kurz, hat_zahl=lambda t: bool(re.search(r"\d{2,}", t or "")))
     vorlagen.env.globals.update(MODELLE=dienst.MODELLE, VARIANTEN=dienst.VARIANTEN,
                                 definition=lambda b: dienst.definition(b, begriffe), pruefe=annahmen.pruefen)
+
+    @app.middleware("http")
+    async def zugang(request: Request, call_next):
+        """Mit ZUGANGSCODE: Ask und Compare (alles, was Geld kostet) nur mit gültigem Zugangs-Cookie."""
+        pfad = request.url.path
+        if cfg.zugangscode and not pfad.startswith(OFFEN):
+            wert = request.cookies.get(ZUGANG, "")
+            if not hmac.compare_digest(wert, _zugang_wert(cfg.zugangscode, cfg.session_secret)):
+                if request.method == "GET":
+                    return RedirectResponse(f"/login?weiter={pfad}", status_code=303)
+                return HTMLResponse('<p class="hinweis">Access code required. The gallery works without one.</p>',
+                                    status_code=403)
+        return await call_next(request)
 
     @app.middleware("http")
     async def sitzung(request: Request, call_next):
@@ -153,6 +173,21 @@ def create_app(einstellungen: Einstellungen | None = None, antwort_fn: Callable 
         if ctx is None:
             return HTMLResponse("Not found.", status_code=404)
         return seite(request, "_karte.html", **ctx)
+
+    @app.get("/login", response_class=HTMLResponse)
+    def login(request: Request, weiter: str = "/", fehler: bool = False):
+        return seite(request, "login.html", weiter=weiter if weiter.startswith("/") and not weiter.startswith("//") else "/",
+                     fehler=fehler, offen=not cfg.zugangscode)
+
+    @app.post("/login")
+    def login_pruefen(code: str = Form(""), weiter: str = Form("/")):
+        ziel = weiter if weiter.startswith("/") and not weiter.startswith("//") else "/"
+        if not cfg.zugangscode or not hmac.compare_digest(code.strip().encode(), cfg.zugangscode.encode()):
+            return RedirectResponse(f"/login?weiter={ziel}&fehler=1", status_code=303)
+        antwort = RedirectResponse(ziel, status_code=303)
+        antwort.set_cookie(ZUGANG, _zugang_wert(cfg.zugangscode, cfg.session_secret), max_age=7 * 24 * 3600,
+                           httponly=True, samesite="lax", secure=cfg.cookie_secure)
+        return antwort
 
     @app.get("/health")
     def health():
