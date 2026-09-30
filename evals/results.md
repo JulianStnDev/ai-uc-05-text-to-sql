@@ -76,12 +76,206 @@ in der Antwort-SQL. Die Bewertung ist davon nicht betroffen.
 Haiku E05, Wiederholung 1: Die Antwort-SQL scheiterte an einer mehrdeutigen Spalte (`amount_usd` in einem Join). Das
 zählt als falsch.
 
+## Branch (c): Schema + Glossar, voller Lauf am 30.09.2026
+
+Glossar: der Entwurf aus Branch (a), unverändert eingefroren (SHA-256 in docs/decisions.md, Test
+`test_glossar_eingefroren`). Je Modell 27 Fragen × 3. Protokolle:
+[`laeufe/20260930-164926_haiku_glossar.jsonl`](laeufe/20260930-164926_haiku_glossar.jsonl),
+[`laeufe/20260930-164928_sonnet_glossar.jsonl`](laeufe/20260930-164928_sonnet_glossar.jsonl).
+Mit Glossar ist M06 eindeutig (erwartet 374, vorab im Goldset festgelegt). In der Spalte „mehrdeutig“ zählt M06 dort also
+als richtig, wenn die Zahl stimmt.
+
+| | Haiku (b) | **Haiku (c)** | Sonnet (b) | **Sonnet (c)** |
+|---|---|---|---|---|
+| richtig (81 Läufe) | 47/81 (58 %) | **70/81 (86 %)** | 74/81 (91 %) | **78/81 (96 %)** |
+| pass^3 | 14/27 | **22/27** | 24/27 | **26/27** |
+| eindeutig | 32/42 | 39/42 | 39/42 | 39/42 |
+| mehrdeutig | 9/18 | 14/18 | 17/18 | 18/18 |
+| Fallen | 3/15 | **14/15** | 12/15 | **15/15** |
+| unbeantwortbar | 3/6 | 3/6 | 6/6 | 6/6 |
+| Kosten je 1.000 Fragen | 6,54 USD | 8,51 USD | 9,51 USD | 10,14 USD |
+| Kosten je 1.000 richtige Antworten | 11,27 USD | **9,85 USD** | 10,41 USD | 10,53 USD |
+| p95 | 9,9 s | 9,4 s | 11,5 s | 8,1 s |
+
+Kosten Branch (c): Haiku 0,69 USD, Sonnet 0,82 USD (Budgets 1,50 und 3,00 USD).
+
+**Das Glossar hebt Haiku fast auf Sonnet-Niveau ohne Glossar** (86 % gegenüber 91 %). Je richtige Antwort ist Haiku mit
+Glossar jetzt die günstigste Kombination: 9,85 USD je 1.000 richtige Antworten. Der längere Prompt kostet je Frage mehr,
+dafür stimmen viel mehr Antworten.
+
+### Wo das Glossar hilft
+
+- **Fallen, Haiku 3/15 → 14/15.** Doppelabbuchungen (F01), Umsatz mit Store und Erstattungen (F02), Zeitzone (F04) und
+  `is_premium` (F05) stehen im Glossar, und Haiku setzt sie um. Sonnet schafft jetzt alle 15.
+- **Umsatz (E05, F02), beide Modelle 0/6 → 6/6.** Ohne Glossar war „Umsatz“ mehrdeutig (brutto oder netto, mit oder
+  ohne Erstattungen). Das Glossar legt es fest, und beide Modelle rechnen es richtig.
+- **Kündigung ≠ Abo-Ende (E04), Haiku 0/3 → 3/3.**
+- **Rückfragen, Haiku M02 und M04 0/3 → 3/3.** Das Glossar sagt ausdrücklich, dass „Kunde“ allein mehrdeutig ist. Das
+  bringt Haiku dazu nachzufragen. Bei M04 (Kündigungsquote) fragt Haiku jetzt nach Zeitraum und Bezug, obwohl das
+  Glossar die Quote gar nicht definiert. Die Definitionen machen es insgesamt vorsichtiger.
+
+### Wo das Glossar nicht hilft
+
+- **U01 (Marketingkanal), Haiku 0/3.** Das Glossar sagt nichts über `channel`. Haiku deutet den Abrechnungsweg weiter
+  als Marketingkanal.
+- **E12 (Median in Tagen), Haiku 0/3.** `EXTRACT(DAY FROM interval)` schneidet auf ganze Tage ab: 7,0 statt 7,4. Das ist
+  ein SQL-Fehler, keine Definitionsfrage.
+- **M06 (aktive Kunden), Haiku 0/3.** Die Definition „Login in den 30 Tagen bis einschließlich Stichtag“ kennt Haiku, zählt
+  aber ab dem 31.08., also 31 Tage: 377 statt 374. Sonnet rechnet 3/3 richtig.
+
+### Rückschritt: Sonnet E02, 3/3 → 0/3 (bekannte Grenze des Goldsets)
+
+*„In welchen fünf Ländern haben wir die meisten Kunden, und wie viele sind es jeweils?“* Das Glossar sagt: „**Kunde**
+allein ist im Haus mehrdeutig … Immer präzisieren.“ Sonnet hält sich daran und fragt dreimal nach, ob Konten, Pro-Kunden
+oder aktive Kunden gemeint sind. Das Goldset wertet E02 aber als eindeutig (Konten). Hier widersprechen sich Glossar und
+Goldset, beide von uns geschrieben. Sonnets Rückfrage ist nach dem Glossar richtig. Die Regeln bleiben eingefroren und die
+Bewertung bleibt wie gemessen: E02 zählt als falsch. Ohne diesen Widerspruch stünde Sonnet (c) bei 81/81.
+
+### Fehler-Rundgang Branch (c)
+
+| Frage | Modell | falsch | Ursache |
+|---|---|---|---|
+| E02 | Sonnet | 3/3 | Rückfrage nach „Kunde“, wie das Glossar verlangt (Konflikt Glossar ↔ Goldset, siehe oben) |
+| E12 | Haiku | 3/3 | `EXTRACT(DAY …)` statt exakter Zeitdifferenz: 7,0 statt 7,4 |
+| M06 | Haiku | 3/3 | 30-Tage-Fenster um einen Tag zu lang (ab 31.08.): 377 statt 374 |
+| U01 | Haiku | 3/3 | Abrechnungsweg als Marketingkanal, das Glossar sagt dazu nichts |
+| M01 | Haiku | 1/3 | Deutung statt Rückfrage: „Sommer“ als Juni bis August angenommen (67) |
+| F03 | Haiku | 1/3 | Kündigungen gezählt statt Kunden: 56 statt 55 |
+
+## Zusatzvariante: Glossar + Spaltenverzeichnis (nur Haiku)
+
+**Nach der Messung ergänzt, auf dieses Goldset hin optimiert.** `docs/SPALTEN.md` erklärt je missverständlicher Spalte
+in einer Zeile, was sie bedeutet (etwa `subscriptions.channel` = Abrechnungsweg). Es ist entstanden, nachdem wir wussten,
+woran Haiku in (b) scheitert. Protokoll:
+[`laeufe/20260930-165159_haiku_glossar_spalten.jsonl`](laeufe/20260930-165159_haiku_glossar_spalten.jsonl), Kosten 0,80 USD.
+
+| | Haiku (c) Glossar | Haiku Glossar + Spalten* |
+|---|---|---|
+| richtig | 70/81 (86 %) | 69/81 (85 %) |
+| pass^3 | 22/27 | 20/27 |
+| U01 | 0/3 | 1/3 |
+| Kosten je 1.000 Fragen | 8,51 USD | 9,91 USD |
+
+\* nach der Messung ergänzt, auf dieses Goldset hin optimiert
+
+**Das Spaltenverzeichnis bringt nichts Messbares.** U01 gelingt einmal von drei Läufen. In einem anderen Lauf schreibt Haiku
+sogar „Dies zeigt den Abrechnungskanal“ und gibt die Zahl trotzdem als Marketingkanal aus. Dafür streut es an anderen
+Stellen: E05 einmal um ein Vielfaches zu hoch (55.692,70 USD) und einmal ohne Werkzeug beendet, F01 einmal ohne
+Bereinigung der Doppelabbuchungen, M02 einmal mit Zahl statt Rückfrage. Unterm Strich 85 % gegenüber 86 %, also Rauschen.
+
+**Warum diese Variante nur eingeschränkt aussagekräftig ist.** Das Spaltenverzeichnis wurde mit Wissen über die
+Testfragen geschrieben. Selbst wenn es geholfen hätte, wüssten wir nicht, ob es bei neuen Fragen hilft oder nur bei
+diesen 27. Das ist Overfitting aufs Testset: Man optimiert an genau den Daten, an denen man misst, und die Messung
+überschätzt dann den Nutzen. Die saubere Alternative ist ein **Holdout**: neue Fragen, die beim Schreiben des Verzeichnisses
+niemand kannte, mit Referenz-SQL vor der Messung festgelegt. Nur auf diesem Holdout wäre ein Gewinn belastbar. Hier gab es
+nicht einmal einen Gewinn auf dem Testset selbst. Das stützt eher die Hauptmessung: Der große Sprung kommt aus den
+Geschäftsdefinitionen, nicht aus Erklärungen zu einzelnen Spalten.
+
+## Vorher/Nachher: dieselbe Frage ohne Glossar, mit Glossar, mit Spaltenverzeichnis (Haiku)
+
+**E05 „Wie hoch war der Umsatz im Mai 2026?“** (erwartet 1.224,34 USD)
+- Nur Schema: *„Der Gesamtumsatz im Mai 2026 betrug $1.344,34: Direktzahlungen $664,64, Store-Transaktionen $679,70.“*
+  Die Erstattungen fehlen. ✗
+- Glossar: *„1.224,34 USD (netto): 664,64 USD Web-Umsatz + 679,70 USD Store-Umsatz − 120,00 USD Erstattungen.“* ✓
+- Spaltenverzeichnis: *„1.224,34 USD … Nettoumsatz nach Abzug von Erstattungen (ausgenommen Doppelabbuchungen).“* ✓
+  (in 1 von 3 Läufen)
+
+**F04 „Wie viele Logins fanden im Gesamtzeitraum morgens zwischen 6 und 9 Uhr statt?“** (erwartet 6.696)
+- Nur Schema: `EXTRACT(HOUR FROM logged_in_at AT TIME ZONE 'UTC')` → *„3.695 Logins“* ✗
+- Glossar: `EXTRACT(HOUR FROM l.logged_in_at AT TIME ZONE c.timezone)` → *„6.696 Logins … (Ortszeit des jeweiligen
+  Kunden)“* ✓
+- Spaltenverzeichnis: 6.696 ✓. Der Satz im Glossar („Tageszeit … Ortszeit des Kunden“) reicht.
+
+**M02 „Wie viele Kunden haben wir?“** (erwartet: Rückfrage)
+- Nur Schema: *„FocusFlow hat insgesamt 600 Kunden.“* ✗
+- Glossar: *„Bitte präzisieren Sie, welche Kundengruppe Sie interessiert: Konten insgesamt, zahlende Pro-Kunden zum
+  30.09.2026, aktive Kunden …?“* ✓
+- Spaltenverzeichnis: *„Welche Kunden meinst du? 1. Alle registrierten Konten 2. Pro-Kunden zum Stichtag 3. Aktive
+  Kunden …“* ✓ (2 von 3)
+
+**U01 „Über welchen Marketingkanal kamen im März 2026 die meisten Neukunden?“** (erwartet: keine Daten)
+- Nur Schema: *„… über den Web-Kanal (9 Kunden). Es folgen Apple mit 6 und Google mit 2.“* ✗
+- Glossar: *„… über den Web-Kanal mit 13 Neukunden …“* ✗. Das Glossar sagt nichts über `channel`.
+- Spaltenverzeichnis, Lauf 2: *„Die Datenbank enthält keine explizite Spalte für den Marketingkanal … Wenn Sie
+  stattdessen nach dem Abrechnungskanal fragen …“* ✓. In Lauf 1 und 3 wieder die Ersatz-Abfrage. ✗
+
+**Sonnet E02 „In welchen fünf Ländern haben wir die meisten Kunden?“** (Goldset: Konten, DE 189 …)
+- Nur Schema: DE 189, US 121, GB 52, AU 45, JP 38 ✓
+- Glossar: *„Was meinst du mit ‚Kunden‘? Im Haus gibt es dafür drei Definitionen …“* ✗ nach Goldset, richtig nach Glossar.
+
 ## Rohausgabe `scripts/auswerten.py`
 
 | Modell | Variante | richtig | pass^k | E | M | F | U | Kosten/1000 Req. | Kosten/1000 richtige | p50 | p95 | SQL/Frage | Fehler |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| claude-haiku-4-5 | glossar | 70/81 (86 %) | 22/27 (k=3) | 39/42 | 14/18 | 14/15 | 3/6 | 8.51 USD | 9.85 USD | 4.6 s | 9.4 s | 0.9 | 0 |
+| claude-haiku-4-5 | glossar_spalten | 69/81 (85 %) | 20/27 (k=3) | 38/42 | 14/18 | 13/15 | 4/6 | 9.91 USD | 11.64 USD | 4.8 s | 10.6 s | 0.9 | 1 |
 | claude-haiku-4-5 | schema | 47/81 (58 %) | 14/27 (k=3) | 32/42 | 9/18 | 3/15 | 3/6 | 6.54 USD | 11.27 USD | 4.7 s | 9.9 s | 1.1 | 1 |
+| claude-sonnet-5-5 | glossar | 78/81 (96 %) | 26/27 (k=3) | 39/42 | 18/18 | 15/15 | 6/6 | 10.14 USD | 10.53 USD | 5.0 s | 8.1 s | 0.8 | 0 |
 | claude-sonnet-5-5 | schema | 74/81 (91 %) | 24/27 (k=3) | 39/42 | 17/18 | 12/15 | 6/6 | 9.51 USD | 10.41 USD | 5.3 s | 11.5 s | 0.9 | 0 |
+
+### claude-haiku-4-5 · glossar
+
+| Frage | Wdh. 1 | Wdh. 2 | Wdh. 3 |
+|---|---|---|---|
+| E01 | ✓ | ✓ | ✓ |
+| E02 | ✓ | ✓ | ✓ |
+| E03 | ✓ | ✓ | ✓ |
+| E04 | ✓ | ✓ | ✓ |
+| E05 | ✓ | ✓ | ✓ |
+| E06 | ✓ | ✓ | ✓ |
+| E07 | ✓ | ✓ | ✓ |
+| E08 | ✓ | ✓ | ✓ |
+| E10 | ✓ | ✓ | ✓ |
+| E11 | ✓ | ✓ | ✓ |
+| E12 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| E13 | ✓ | ✓ | ✓ |
+| E14 | ✓ | ✓ | ✓ |
+| E15 | ✓ | ✓ | ✓ |
+| F01 | ✓ | ✓ | ✓ |
+| F02 | ✓ | ✓ | ✓ |
+| F03 | ✓ | ✓ | ✗ ergebnis |
+| F04 | ✓ | ✓ | ✓ |
+| F05 | ✓ | ✓ | ✓ |
+| M01 | ✓ | ✓ | ✗ ergebnis |
+| M02 | ✓ | ✓ | ✓ |
+| M03 | ✓ | ✓ | ✓ |
+| M04 | ✓ | ✓ | ✓ |
+| M05 | ✓ | ✓ | ✓ |
+| M06 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| U01 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| U02 | ✓ | ✓ | ✓ |
+
+### claude-haiku-4-5 · glossar_spalten
+
+| Frage | Wdh. 1 | Wdh. 2 | Wdh. 3 |
+|---|---|---|---|
+| E01 | ✓ | ✓ | ✓ |
+| E02 | ✓ | ✓ | ✓ |
+| E03 | ✓ | ✓ | ✓ |
+| E04 | ✓ | ✓ | ✓ |
+| E05 | ✗ ergebnis | ✓ | ✗ keine |
+| E06 | ✓ | ✓ | ✓ |
+| E07 | ✓ | ✓ | ✓ |
+| E08 | ✓ | ✓ | ✓ |
+| E10 | ✓ | ✓ | ✓ |
+| E11 | ✓ | ✓ | ✓ |
+| E12 | ✗ ergebnis | ✓ | ✗ ergebnis |
+| E13 | ✓ | ✓ | ✓ |
+| E14 | ✓ | ✓ | ✓ |
+| E15 | ✓ | ✓ | ✓ |
+| F01 | ✓ | ✓ | ✗ ergebnis |
+| F02 | ✓ | ✓ | ✓ |
+| F03 | ✓ | ✗ ergebnis | ✓ |
+| F04 | ✓ | ✓ | ✓ |
+| F05 | ✓ | ✓ | ✓ |
+| M01 | ✓ | ✓ | ✓ |
+| M02 | ✓ | ✓ | ✗ ergebnis |
+| M03 | ✓ | ✓ | ✓ |
+| M04 | ✓ | ✓ | ✓ |
+| M05 | ✓ | ✓ | ✓ |
+| M06 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| U01 | ✗ ergebnis | ✓ | ✗ ergebnis |
+| U02 | ✓ | ✓ | ✓ |
 
 ### claude-haiku-4-5 · schema
 
@@ -113,6 +307,38 @@ zählt als falsch.
 | M05 | ✓ | ✓ | ✓ |
 | M06 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
 | U01 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| U02 | ✓ | ✓ | ✓ |
+
+### claude-sonnet-5-5 · glossar
+
+| Frage | Wdh. 1 | Wdh. 2 | Wdh. 3 |
+|---|---|---|---|
+| E01 | ✓ | ✓ | ✓ |
+| E02 | ✗ rueckfrage | ✗ rueckfrage | ✗ rueckfrage |
+| E03 | ✓ | ✓ | ✓ |
+| E04 | ✓ | ✓ | ✓ |
+| E05 | ✓ | ✓ | ✓ |
+| E06 | ✓ | ✓ | ✓ |
+| E07 | ✓ | ✓ | ✓ |
+| E08 | ✓ | ✓ | ✓ |
+| E10 | ✓ | ✓ | ✓ |
+| E11 | ✓ | ✓ | ✓ |
+| E12 | ✓ | ✓ | ✓ |
+| E13 | ✓ | ✓ | ✓ |
+| E14 | ✓ | ✓ | ✓ |
+| E15 | ✓ | ✓ | ✓ |
+| F01 | ✓ | ✓ | ✓ |
+| F02 | ✓ | ✓ | ✓ |
+| F03 | ✓ | ✓ | ✓ |
+| F04 | ✓ | ✓ | ✓ |
+| F05 | ✓ | ✓ | ✓ |
+| M01 | ✓ | ✓ | ✓ |
+| M02 | ✓ | ✓ | ✓ |
+| M03 | ✓ | ✓ | ✓ |
+| M04 | ✓ | ✓ | ✓ |
+| M05 | ✓ | ✓ | ✓ |
+| M06 | ✓ | ✓ | ✓ |
+| U01 | ✓ | ✓ | ✓ |
 | U02 | ✓ | ✓ | ✓ |
 
 ### claude-sonnet-5-5 · schema

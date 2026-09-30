@@ -189,3 +189,14 @@ gleichrangig. Eine saubere Messung bräuchte neue Fragen, die beim Schreiben des
 
 Bewertung: M06 gilt wie in der Glossar-Variante als eindeutig (374), weil das Glossar enthalten ist. Sonst unverändert.
 Schätzung: Prompt bei Haiku 3.439 Tokens (Glossar allein 2.898, nur Schema 1.734), weiter unter der Cache-Schwelle; ca. 0,85 USD.
+
+## 2026-09-30: Ergebnis Branch (c) und Zusatzvariante
+
+- Hauptmessung mit eingefrorenem Glossar: Haiku 70/81 (86 %), Sonnet 78/81 (96 %). Kosten 0,69 und 0,82 USD.
+- Zusatzvariante (Haiku, Glossar + Spaltenverzeichnis, nach der Messung ergänzt): 69/81 (85 %), Kosten 0,80 USD.
+  Kein messbarer Gewinn gegenüber dem Glossar allein.
+- **Bekannte Grenze des Goldsets, E02:** Das Glossar erklärt „Kunde“ allein für mehrdeutig. Sonnet fragt deshalb bei E02
+  nach („die meisten Kunden je Land“), das Goldset erwartet die Zahl der Konten. Glossar und Goldset widersprechen sich.
+  Keine Änderung an Regeln, Goldset oder Bewertung: E02 zählt als falsch. Für eine nächste Goldset-Fassung wäre E02 als
+  „Konten“ zu formulieren oder als mehrdeutig zu führen; beides erst mit neuer Messung.
+- Keine Regeländerung nach den Läufen.

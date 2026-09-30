@@ -9,7 +9,7 @@
   ],
   "summary": "An analytics copilot answering business questions in SQL, measured on a goldset whose data hides the business rules a schema cannot show.",
   "metrics": [
-    "With the schema alone, Sonnet 5.5 answers 91 % of 81 runs correctly (Haiku 4.5: 58 %).",
-    "Sonnet 5.5: 9.51 USD per 1000 requests at 11.5 s p95 latency."
+    "With the glossary, Haiku 4.5 rises from 58 % to 86 % correct and Sonnet 5.5 from 91 % to 96 %.",
+    "Haiku 4.5 with glossary: 9.85 USD per 1000 correct answers, the cheapest combination."
   ]
 }
