@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block inhalt %}
+<section class="login">
+  <h1>Live questions need an access code</h1>
+  <p>Every live question calls a language model and costs money, so <strong>Ask</strong> and <strong>Compare</strong>
+    are behind an access code. The <a href="/gallery">gallery</a> shows every recorded run from the measurements and
+    needs no code.</p>
+  {% if offen %}<p class="leise">This instance runs without an access code.</p>{% endif %}
+  <form method="post" action="/login" class="frage">
+    <input type="hidden" name="weiter" value="{{ weiter }}">
+    <label for="code">Access code</label>
+    <div class="zeile">
+      <input id="code" name="code" type="password" autocomplete="current-password" required>
+      <button type="submit">Continue</button>
+    </div>
+    {% if fehler %}<p class="hinweis">That code is not valid.</p>{% endif %}
+  </form>
+</section>
+{% endblock %}

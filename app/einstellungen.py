@@ -2,7 +2,8 @@
 
 Pflicht: ANALYTICS_RO_URL (nur die Rolle analyst_ro, die App prüft das beim ersten Zugriff) und ANTHROPIC_API_KEY.
 Optional: SESSION_SECRET (sonst zufällig, Sitzungen überleben dann keinen Neustart), KOSTEN_DB_URL (Postgres für das
-Kostenbuch; ohne sie SQLite in DATEN_DIR), DECKEL_SITZUNG_USD (0.25), DECKEL_MONAT_USD (3.00), COOKIE_SECURE.
+Kostenbuch; ohne sie SQLite in DATEN_DIR), DECKEL_SITZUNG_USD (0.25), DECKEL_MONAT_USD (3.00), COOKIE_SECURE,
+ZUGANGSCODE (mindestens 12 Zeichen; gesetzt heißt: Ask und Compare nur mit Code, die Galerie bleibt offen).
 """
 
 import os
@@ -20,6 +21,7 @@ class Einstellungen:
     deckel_sitzung_usd: float = 0.25
     deckel_monat_usd: float = 3.00
     cookie_secure: bool = False
+    zugangscode: str | None = None
 
 
 def aus_umgebung() -> Einstellungen:
@@ -28,6 +30,9 @@ def aus_umgebung() -> Einstellungen:
         raise RuntimeError("ANALYTICS_RO_URL fehlt.")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise RuntimeError("ANTHROPIC_API_KEY fehlt.")
+    code = os.environ.get("ZUGANGSCODE") or None
+    if code is not None and len(code) < 12:
+        raise RuntimeError("ZUGANGSCODE muss mindestens 12 Zeichen haben.")
     return Einstellungen(
         analytics_ro_url=url,
         session_secret=os.environ.get("SESSION_SECRET") or secrets.token_hex(32),
@@ -36,4 +41,5 @@ def aus_umgebung() -> Einstellungen:
         deckel_sitzung_usd=float(os.environ.get("DECKEL_SITZUNG_USD", "0.25")),
         deckel_monat_usd=float(os.environ.get("DECKEL_MONAT_USD", "3.00")),
         cookie_secure=os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"),
+        zugangscode=code,
     )
