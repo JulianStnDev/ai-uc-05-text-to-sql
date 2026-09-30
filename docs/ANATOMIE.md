@@ -1,31 +1,54 @@
 # Anatomie eines Laufs
 
-Lern-Zwischenstufe zwischen Branch (b) und (c): Was geht bei einer Frage tatsächlich über die Leitung, warum wachsen die
-Tokens, was verrät das Thinking, und was bewirkt ein zusätzlicher Satz im Prompt?
+Was passiert genau, wenn der Copilot eine Frage beantwortet? Dieses Dokument schaut einem Lauf über die Schulter.
+Es beantwortet vier Fragen:
 
-**Datenbasis.** Die Messprotokolle (`evals/laeufe/`) enthalten Tokens, SQL und Antwort, aber keine rohen Requests,
-keine Textblöcke und kein Thinking. Deshalb gab es am 30.09.2026 einige neue Läufe mit Mitschnitt
-(`scripts/anatomie.py`, Harness-Schalter `mitschnitt`, `zusatz` und `thinking_anzeigen`, in Messläufen alle aus):
+1. Was schickt der Copilot an das Modell, und was kommt zurück?
+2. Warum wird jeder Aufruf größer als der vorige?
+3. Was verrät das „Thinking“ (Nachdenken) des Modells?
+4. Hilft ein einzelner Satz mehr im Prompt?
 
-| Datei in `evals/anatomie/` | Inhalt | Kosten |
+## Ein paar Begriffe vorab
+
+- **Aufruf:** Der Copilot schickt eine Anfrage an das Modell (den **Request**) und bekommt eine Antwort (die
+  **Response**). Für eine Frage braucht er meist 1 bis 3 Aufrufe.
+- **Token:** Ein Textstück, etwa ein kurzes Wort oder ein Wortteil. Bezahlt wird je Token, getrennt nach dem, was
+  hineingeht (**Input**) und was herauskommt (**Output**).
+- **Werkzeug (Tool):** Eine Funktion, die das Modell benutzen darf. Hier gibt es zwei: `sql_ausfuehren` (eine Abfrage
+  an die Datenbank schicken) und `antworten` (die Frage beenden).
+- **Cache:** Ein Zwischenspeicher bei der API. Schickt man denselben Anfang noch einmal, kostet er nur ein Zehntel.
+
+## Woher die Daten kommen
+
+Die Messprotokolle speichern nur Tokens, SQL und Antwort. Den ganzen Request sieht man dort nicht. Deshalb gab es am
+30.09.2026 ein paar neue Läufe, bei denen alles mitgeschnitten wurde (`scripts/anatomie.py`). In den Messläufen ist
+dieser Mitschnitt immer ausgeschaltet.
+
+| Datei in `evals/anatomie/` | Was drin ist | Kosten |
 |---|---|---|
-| `mitschnitt_U01_haiku.json` | U01 mit Haiku, jeder Aufruf roh | 0,0065 USD |
-| `mitschnitt_U02_haiku.json` | U02 mit Haiku, jeder Aufruf roh | 0,0067 USD |
-| `mitschnitt_U01_sonnet_1.json` | U01 mit Sonnet, Thinking sichtbar geschaltet, hat aber nicht gedacht | 0,0098 USD |
-| `mitschnitt_U01_sonnet_2.json` | U01 mit Sonnet, zweiter Versuch, diesmal mit Thinking (von Hand nachgestartet, gleiche Einstellungen) | 0,0046 USD |
-| `zusatz_haiku.jsonl` | U01 und M02 je 5 × Haiku mit einem Satz mehr im Prompt | 0,0551 USD |
+| `mitschnitt_U01_haiku.json` | Frage U01 mit Haiku, jeder Aufruf komplett | 0,0065 USD |
+| `mitschnitt_U02_haiku.json` | Frage U02 mit Haiku, jeder Aufruf komplett | 0,0067 USD |
+| `mitschnitt_U01_sonnet_1.json` | Frage U01 mit Sonnet, erster Versuch (Sonnet hat nicht nachgedacht) | 0,0098 USD |
+| `mitschnitt_U01_sonnet_2.json` | Frage U01 mit Sonnet, zweiter Versuch mit Nachdenken (von Hand nachgestartet, gleiche Einstellungen) | 0,0046 USD |
+| `zusatz_haiku.jsonl` | U01 und M02 je 5-mal mit Haiku, mit einem Satz mehr im Prompt | 0,0551 USD |
 | | **zusammen (Budget 0,20 USD)** | **0,0827 USD** |
 
-Die Mitschnitte sind neue Läufe, keine Wiederholungen der gemessenen. Sie zeigen typisches Verhalten, das zu den
-Messungen passt: Haiku lag bei U01 in allen 4 gemessenen Läufen falsch und auch hier, U02 und Sonnet lagen richtig.
-Unten gekürzt ist nur, was sich wiederholt, markiert mit `[gekürzt]` oder „wie oben“. `id`-Felder der Antworten sind
-weggelassen.
+Das sind neue Läufe, keine Kopien der gemessenen. Sie verhalten sich aber wie in der Messung: Haiku lag bei U01 schon
+viermal falsch und auch hier wieder. U02 und Sonnet lagen richtig.
 
-## 1. Was ein Request enthält
+In den JSON-Ausschnitten unten ist nur gekürzt, was sich wiederholt. Solche Stellen sind mit `[gekürzt]` oder „wie
+oben“ markiert. Die `id` der Antworten ist weggelassen.
 
-Die API ist zustandslos. Jeder Aufruf schickt alles, was das Modell wissen soll: Modell, `system` (Anweisung und
-Schema), `tools` (zwei Werkzeuge) und `messages` (bisheriger Dialog). Der erste Aufruf zu U01 mit Haiku, vollständig
-bis auf das Schema:
+## 1. Was im Request steht
+
+Das Modell merkt sich nichts zwischen zwei Aufrufen. Darum schickt der Copilot jedes Mal alles mit:
+
+- `model`: welches Modell antworten soll
+- `system`: die Anweisung an den Copiloten und das Datenbankschema
+- `tools`: die beiden Werkzeuge
+- `messages`: das bisherige Gespräch
+
+So sah der erste Aufruf zu U01 mit Haiku aus. Nur das Schema ist gekürzt:
 
 ```json
 {
@@ -96,31 +119,36 @@ bis auf das Schema:
 }
 ```
 
-Wie viele Tokens davon auf welchen Teil entfallen, mit `count_tokens` gemessen (kostenlos):
+Wie viele Tokens entfallen auf welchen Teil? Gezählt mit `count_tokens`, das kostet nichts:
 
 | Teil | Haiku 4.5 | Sonnet 5.5 |
 |---|---|---|
 | Anweisung (13 Zeilen) | 287 | 383 |
-| Schema (`db/schema.sql`, 2.237 Zeichen) | 622 | 1.156 |
-| Werkzeuge (2 Definitionen) | 802 | 670 |
+| Schema (`db/schema.sql`) | 622 | 1.156 |
+| Werkzeuge (2 Beschreibungen) | 802 | 670 |
 | Frage | 24 | 30 |
 | Rahmen | 8 | 9 |
-| **Input des ersten Aufrufs** | **1.743** | **2.248** |
+| **Input beim ersten Aufruf** | **1.743** | **2.248** |
 
-Drei Beobachtungen:
-- **Die Werkzeuge sind bei Haiku der größte Block.** Die zwei kurzen JSON-Definitionen kosten 802 Tokens, weil die API
-  daraus zusätzlich eine eigene Anleitung zur Werkzeugnutzung erzeugt, die im Request nicht zu sehen ist.
-- **Derselbe Text zählt bei Sonnet anders.** Sonnet 5.5 hat einen anderen Tokenizer: Das Schema braucht dort 86 % mehr
-  Tokens, die Werkzeuge weniger. Tokenzahlen lassen sich zwischen Modellen nicht vergleichen, nur Kosten.
-- **Der Modellname wird aufgelöst.** Angefragt wird `claude-haiku-4-5`, die Antwort meldet
+Was daran auffällt:
+- **Bei Haiku kosten die Werkzeuge am meisten.** Die zwei kurzen Beschreibungen zählen 802 Tokens, mehr als das ganze
+  Schema. Der Grund: Die API baut aus den Werkzeugen selbst noch eine Anleitung. Die steht nicht im Request, wird aber
+  mitgezählt.
+- **Sonnet zählt anders.** Derselbe Text ergibt bei Sonnet andere Token-Zahlen, beim Schema 86 % mehr. Token-Zahlen
+  kann man also nicht zwischen Modellen vergleichen. Vergleichen kann man die Kosten.
+- **Der Modellname wird ergänzt.** Wir fragen `claude-haiku-4-5` an. In der Antwort steht
   `claude-haiku-4-5-20251001`.
 
-## 2. U02 mit Haiku: richtig, aber mit Umweg (2 Aufrufe)
+## 2. U02 mit Haiku: richtig, aber mit einem Umweg
 
-*„Wie hoch war der NPS im dritten Quartal 2026?“* Die Datenbank hat keine Umfragedaten, richtig ist „keine Daten“.
+Frage U02: *„Wie hoch war der NPS im dritten Quartal 2026?“*
 
-**Aufruf 1, Response.** Haiku erkennt das Problem sofort, antwortet aber als freier Text statt mit dem Werkzeug
-`antworten`. `stop_reason` ist `end_turn`, nicht `tool_use`:
+Der NPS ist eine Kennzahl aus Kundenumfragen. Umfragen gibt es in der Datenbank nicht. Die richtige Antwort ist also
+„keine Daten“.
+
+**Aufruf 1, Antwort des Modells.** Haiku merkt sofort, dass Umfragedaten fehlen. Aber es antwortet mit freiem Text,
+nicht mit dem Werkzeug `antworten`. Man sieht das an `stop_reason: "end_turn"`. Bei einer Werkzeugnutzung stünde dort
+`"tool_use"`.
 
 ```json
 {
@@ -149,12 +177,11 @@ Drei Beobachtungen:
 }
 ```
 
-Der Text nennt sich selbst „Rückfrage“, schlägt Ersatzmetriken vor und fragt nach einer Tabelle, die es nicht gibt. Für
-den Harness ist das keine Antwort, weil kein Werkzeug benutzt wurde. Er hängt deshalb genau einmal eine Erinnerung an
-(sonst zählt die Frage als falsch).
+Der Copilot braucht aber das Werkzeug `antworten`, sonst gibt es keine Antwort, die er bewerten kann. Also schickt er
+einmal eine Erinnerung.
 
-**Aufruf 2, Request** (System und Werkzeuge wie oben): Die Frage, Haikus Text als `assistant` und die Erinnerung als
-`user`:
+**Aufruf 2, Request.** System und Werkzeuge sind gleich wie oben. Im Gespräch stehen jetzt drei Nachrichten: die Frage,
+Haikus Text und die Erinnerung.
 
 ```json
 {
@@ -187,7 +214,7 @@ den Harness ist das keine Antwort, weil kein Werkzeug benutzt wurde. Er hängt d
 }
 ```
 
-**Aufruf 2, Response.** Jetzt entscheidet Haiku sauber: `keine_daten`.
+**Aufruf 2, Antwort.** Jetzt benutzt Haiku das Werkzeug und antwortet richtig mit `keine_daten`:
 
 ```json
 {
@@ -225,15 +252,18 @@ den Harness ist das keine Antwort, weil kein Werkzeug benutzt wurde. Er hängt d
 }
 ```
 
-Der Umweg kostet einen zweiten Aufruf mit 2.110 Input-Tokens. Er erklärt auch, warum U02 bei Haiku manchmal 1 und
-manchmal 2 Aufrufe braucht.
+Der Umweg kostet einen zweiten Aufruf mit 2.110 Input-Tokens. Er erklärt auch, warum Haiku für U02 mal einen und mal
+zwei Aufrufe braucht.
 
 ## 3. U01: Haiku biegt falsch ab, Sonnet nicht
 
-*„Über welchen Marketingkanal kamen im März 2026 die meisten Neukunden?“* Die Datenbank erfasst keinen Marketingkanal.
-`subscriptions.channel` (web, apple, google) ist der Abrechnungsweg des Abos. Richtig ist „keine Daten“.
+Frage U01: *„Über welchen Marketingkanal kamen im März 2026 die meisten Neukunden?“*
 
-### Haiku, Aufruf 1: hier biegt es falsch ab
+Die Datenbank speichert nicht, über welche Werbung ein Kunde kam. Es gibt zwar eine Spalte `channel` in der Tabelle
+`subscriptions`. Sie sagt aber nur, wie ein Abo bezahlt wird: im Web, über Apple oder über Google. Die richtige
+Antwort ist also „keine Daten“.
+
+### Haiku, Aufruf 1: Hier passiert der Fehler
 
 ```json
 {
@@ -273,13 +303,17 @@ manchmal 2 Aufrufe braucht.
 }
 ```
 
-**➜ Die Abzweigung** steht im ersten Satz, noch vor jeder SQL: *„… nach ihrem **Registrierungskanal** zu
-analysieren.“* Aus „Marketingkanal“ wird stillschweigend „Registrierungskanal“, und dafür gibt es eine Spalte, die
-passend klingt: `subscriptions.channel`. Ab hier stellt Haiku die Frage nicht mehr, ob die Daten die Frage beantworten,
-sondern nur noch, wie man die Spalte abfragt. Nebenbei zählt die SQL nur Neukunden, die schon im März ein Abo
-abgeschlossen haben (17 von 54 Neukunden). Die Frage fragt aber nach allen Neukunden.
+**➜ Der Fehler steckt im ersten Satz, noch vor der SQL.** Haiku schreibt: *„… nach ihrem **Registrierungskanal** zu
+analysieren.“* Aus „Marketingkanal“ ist unbemerkt „Registrierungskanal“ geworden. Und dafür gibt es eine Spalte, die
+passend klingt: `channel`. Ab jetzt fragt Haiku nicht mehr: „Gibt es diese Daten überhaupt?“ Es fragt nur noch: „Wie
+frage ich diese Spalte ab?“
 
-### Haiku, Aufruf 2: der Request wächst um die eigene Antwort und das Tool-Ergebnis
+Dazu kommt ein zweiter, kleinerer Fehler: Die SQL zählt nur Neukunden, die schon im März ein Abo abgeschlossen haben.
+Das sind 17 von 54 Neukunden. Gefragt war nach allen.
+
+### Haiku, Aufruf 2: der Request wird größer
+
+Zum Gespräch kommen Haikus eigene Antwort aus Aufruf 1 und das Ergebnis der Abfrage dazu:
 
 ```json
 {
@@ -327,7 +361,7 @@ abgeschlossen haben (17 von 54 Neukunden). Die Frage fragt aber nach allen Neuku
 }
 ```
 
-### Haiku, Aufruf 2: Response
+### Haiku, Aufruf 2: die Antwort
 
 ```json
 {
@@ -365,13 +399,13 @@ abgeschlossen haben (17 von 54 Neukunden). Die Frage fragt aber nach allen Neuku
 }
 ```
 
-Das Ergebnis der Probe-Abfrage (web 9, apple 6, google 2) sieht plausibel aus, also wird es zur Antwort. Nichts im
-Ablauf zwingt Haiku, die Deutung noch einmal zu prüfen. In den gemessenen Läufen kamen mal 9/6/2 heraus, mal 13/7/2,
-je nachdem, ob die SQL zusätzlich auf den Abo-Start im März filtert. Die Deutung war jedes Mal dieselbe.
+Das Ergebnis (web 9, apple 6, google 2) sieht plausibel aus. Also macht Haiku es zur Antwort. Nichts im Ablauf bringt
+Haiku dazu, seine Deutung noch einmal zu prüfen. In den gemessenen Läufen kamen mal 9/6/2 und mal 13/7/2 heraus, je
+nach Filter. Die falsche Deutung war jedes Mal dieselbe.
 
-### Sonnet bei derselben Frage: ein Aufruf
+### Sonnet bei derselben Frage: ein einziger Aufruf
 
-Request (System und Werkzeuge wie oben, dazu Effort und das sichtbar geschaltete Thinking):
+Request (System und Werkzeuge wie oben, dazu die Einstellungen für das Nachdenken):
 
 ```json
 {
@@ -396,7 +430,7 @@ Request (System und Werkzeuge wie oben, dazu Effort und das sichtbar geschaltete
 }
 ```
 
-Response:
+Antwort:
 
 ```json
 {
@@ -442,45 +476,47 @@ Response:
 }
 ```
 
-Sonnet fragt die Datenbank gar nicht erst ab. Das Schema reicht, um zu sehen, dass es keinen Marketingkanal gibt.
-Genau die Spalte, bei der Haiku abbiegt, benennt Sonnet ausdrücklich als Falle („Bezahlweg, nicht Marketingkanal“).
-Danach bietet es sinnvolle Ersatzfragen an, führt sie aber nicht ungefragt aus. Das ist der Unterschied zu Haiku: Ein
-Ersatz ist erlaubt, wenn er offen als Angebot kommt, nicht als Antwort getarnt.
+Sonnet fragt die Datenbank gar nicht erst ab. Das Schema reicht ihm, um zu sehen: Einen Marketingkanal gibt es nicht.
+Genau die Spalte, an der Haiku falsch abbiegt, erklärt Sonnet ausdrücklich: Sie beschreibt den Bezahlweg, nicht den
+Marketingkanal. Danach schlägt Sonnet andere Auswertungen vor, führt sie aber nicht ungefragt aus.
+
+Das ist der eigentliche Unterschied: Einen Ersatz vorzuschlagen ist in Ordnung. Einen Ersatz als Antwort auszugeben,
+ohne es zu sagen, ist es nicht.
 
 | | Haiku | Sonnet |
 |---|---|---|
 | Aufrufe | 2 | 1 |
-| Input-Tokens gesamt | 3.785 | 2.248 (davon 2.244 aus dem Cache gelesen) |
-| Output-Tokens | 533 | 419 (davon 77 Thinking) |
+| Input-Tokens | 3.785 | 2.248 (davon 2.244 aus dem Cache) |
+| Output-Tokens | 533 | 419 (davon 77 fürs Nachdenken) |
 | Kosten | 0,0065 USD | 0,0046 USD |
 | Ergebnis | Ersatz-Abfrage, falsch | keine Daten, richtig |
 
-Hier ist Sonnet sogar billiger: ein Aufruf statt zwei, und der Prompt kommt fast vollständig aus dem Cache.
+Hier ist Sonnet sogar billiger als Haiku. Es braucht nur einen Aufruf, und der Prompt kommt fast ganz aus dem Cache.
 
-## 4. Wie die Input-Tokens von Aufruf zu Aufruf wachsen
+## 4. Warum jeder Aufruf größer wird
 
-Weil die API keinen Zustand hält, schickt jeder Aufruf den ganzen bisherigen Dialog noch einmal. Der Input von Aufruf
-n+1 ist deshalb ungefähr:
+Das Modell merkt sich nichts. Darum schickt jeder Aufruf das ganze bisherige Gespräch noch einmal. Der nächste Aufruf ist
+deshalb so groß wie:
 
-> Input(n) + Output(n) + das, was der Harness anhängt (Tool-Ergebnis oder Erinnerung)
+> der vorige Input + die vorige Antwort des Modells + was der Copilot anhängt (Abfrage-Ergebnis oder Erinnerung)
 
-| Lauf | Aufruf 1 | Aufruf 2 | Aufruf 3 | Aufruf 4 | angehängt |
-|---|---|---|---|---|---|
-| U01 Haiku (Mitschnitt) | 1.743 | 2.042 | | | 243 Output + 56 Tool-Ergebnis |
-| U02 Haiku (Mitschnitt) | 1.736 | 2.110 | | | 352 Output + 22 Erinnerung |
-| E06 Haiku (Pilot) | 1.759 | 3.138 | 3.351 | 3.541 | nach Aufruf 1: 194 Output + ca. 1.185 Tool-Ergebnis |
+Bei den beiden Mitschnitten geht die Rechnung genau auf:
 
-Bei U01 geht die Rechnung exakt auf: 1.743 + 243 + 56 = 2.042. Bei U02 genauso: 1.736 + 352 + 22 = 2.110. Zwei Dinge
-treiben die Kosten:
-- **Große Tool-Ergebnisse.** Bei E06 hat die erste Probe-Abfrage viele Zeilen geliefert. Das Ergebnis reist danach in
-  jedem weiteren Aufruf mit. Deshalb begrenzt der Harness die Zeilen auf 50.
-- **Die Summe, nicht der letzte Aufruf.** Bezahlt wird jeder Aufruf voll. E06 hatte 4 Aufrufe mit zusammen 11.789
-  Input-Tokens, fast siebenmal so viel wie ein einzelner Prompt.
+| Lauf | Aufruf 1 | + Antwort | + angehängt | = Aufruf 2 |
+|---|---|---|---|---|
+| U01 Haiku | 1.743 | 243 | 56 (Abfrage-Ergebnis) | 2.042 |
+| U02 Haiku | 1.736 | 352 | 22 (Erinnerung) | 2.110 |
 
-**Mit Cache (Sonnet)** sieht dasselbe Wachstum anders aus. Das automatische Caching setzt die Marke ans Ende des
-Requests, der ganze bisherige Dialog wird also zum Präfix des nächsten Aufrufs. Beispiel F02, Sonnet, voller Lauf:
+Zwei Dinge machen einen Lauf teuer:
+- **Große Abfrage-Ergebnisse.** Ein Ergebnis reist in jedem weiteren Aufruf mit. Bei Frage E06 im Pilot kamen nach
+  der ersten Abfrage etwa 1.185 Tokens dazu (1.759 → 3.138). Deshalb gibt der Copilot dem Modell höchstens 50 Zeilen.
+- **Jeder Aufruf wird voll bezahlt.** E06 hatte 4 Aufrufe mit zusammen 11.789 Input-Tokens. Das ist fast siebenmal so
+  viel wie ein einzelner Prompt.
 
-| Aufruf | ungecacht | aus dem Cache gelesen | in den Cache geschrieben |
+**Mit Cache (Sonnet) wird das Wachstum billig.** Der Cache speichert das ganze bisherige Gespräch. Beim nächsten Aufruf
+kostet dieser Teil nur ein Zehntel. Voll bezahlt wird nur das, was neu dazukommt. Beispiel Frage F02, Sonnet:
+
+| Aufruf | neu, ohne Cache | aus dem Cache gelesen | neu in den Cache geschrieben |
 |---|---|---|---|
 | 1 | 4 | 0 | 2.245 |
 | 2 | 2 | 2.245 | 619 |
@@ -488,12 +524,13 @@ Requests, der ganze bisherige Dialog wird also zum Präfix des nächsten Aufrufs
 | 4 | 2 | 3.362 | 228 |
 | 5 | 2 | 3.590 | 634 |
 
-Neu bezahlt wird je Aufruf nur, was dazukommt (Schreiben kostet 1,25 × Input). Der Rest kostet 0,1 ×. Bei Haiku
-passiert das nicht, weil der Prompt unter Haikus Cache-Minimum von 4.096 Tokens liegt.
+Bei Haiku klappt das nicht. Der Cache springt erst ab 4.096 Tokens an, und unser Prompt ist kürzer.
 
-## 5. Thinking: was man ablesen kann und was nicht
+## 5. Was das Nachdenken (Thinking) verrät
 
-Der Thinking-Block aus Sonnets Antwort zu U01 (oben vollständig):
+Sonnet kann vor der Antwort „nachdenken“. Wie viel, entscheidet es selbst. Beim ersten Versuch zu U01 hat es gar nicht
+nachgedacht (0 Tokens) und trotzdem richtig geantwortet. Die Frage war ihm offenbar leicht genug. Beim zweiten Versuch
+kam dieser Block:
 
 ```json
 {
@@ -503,54 +540,57 @@ Der Thinking-Block aus Sonnets Antwort zu U01 (oben vollständig):
 }
 ```
 
-**Was man ablesen kann:**
-- **Den Entscheidungsweg in Kurzform.** Sonnet prüft das Schema, erkennt `channel` als Abrechnungsweg und entscheidet
-  ausdrücklich, keine Abfrage zu starten („no need to query further“). Die Antwort passt dazu.
-- **Wie viel gedacht wurde.** `usage.output_tokens_details.thinking_tokens` = 77. Diese Tokens sind als Output bezahlt.
-- **Dass adaptives Thinking wirklich adaptiv ist.** Im ersten Versuch hat Sonnet bei derselben Frage gar nicht gedacht
-  (`thinking_tokens: 0`) und kam trotzdem zum richtigen Ergebnis. Auf Effort `medium` hält es U01 offenbar für leicht.
+Auf Deutsch: *„Das Schema erfasst keine Marketing- oder Akquisekanäle. Das Feld ‚channel‘ in subscriptions ist nur die
+Bezahlplattform (web/apple/google), nicht die Marketingquelle. Es gibt also keine Daten dafür. Eine Abfrage ist nicht
+nötig.“*
 
-**Was man nicht ablesen kann:**
-- **Den tatsächlichen Gedankengang.** Mit `display: "summarized"` kommt eine Zusammenfassung zurück, nicht das rohe
-  Thinking. Das rohe Thinking gibt die API bei keinem Modell heraus. In der Messung (`display` nicht gesetzt, also
-  `"omitted"`) ist das Feld leer.
-- **Ob die Zusammenfassung vollständig oder getreu ist.** Sie klingt plausibel und passt zur Antwort, aber das ist
-  keine Garantie dafür, dass genau diese Überlegung die Antwort erzeugt hat.
-- **Die `signature`.** Sie ist verschlüsselt und nicht lesbar. Sie beweist der API, dass der Block echt ist, wenn der
-  Harness ihn im nächsten Aufruf zurückschickt. Deshalb reicht der Harness Thinking-Blöcke unverändert zurück.
+**Was man daraus lernt:**
+- **Wie Sonnet entschieden hat, in Kurzform.** Es hat das Schema geprüft, die Falle erkannt und bewusst auf eine Abfrage
+  verzichtet. Das passt zur Antwort.
+- **Wie viel es nachgedacht hat.** 77 Tokens. Sie werden als Output bezahlt.
+- **Dass das Nachdenken nicht immer passiert.** Bei derselben Frage mal 0, mal 77 Tokens.
 
-Die Anzeige ändert am Verhalten nichts: `display` steuert nur die Sichtbarkeit. Gedacht und bezahlt wird gleich.
+**Was man daraus nicht lernt:**
+- **Die echten Gedanken.** Die API gibt nur eine Zusammenfassung heraus, nie das eigentliche Nachdenken. In der Messung
+  ist das Feld sogar ganz leer, weil wir die Zusammenfassung dort nicht anfordern.
+- **Ob die Zusammenfassung stimmt.** Sie klingt plausibel und passt zur Antwort. Ein Beweis, dass Sonnet genau so
+  entschieden hat, ist sie nicht.
+- **Was in `signature` steht.** Das ist ein verschlüsselter Echtheitsstempel. Der Copilot muss den Block damit
+  unverändert zurückschicken, damit die API ihn im nächsten Aufruf annimmt.
 
-## 6. Ein Satz Prompt
+Ob man die Zusammenfassung anfordert, ändert nichts daran, wie Sonnet nachdenkt. Es ändert nur, ob man sie sieht.
 
-Am Ende des System-Prompts stand zusätzlich:
+## 6. Hilft ein Satz mehr im Prompt?
+
+Am Ende der Anweisung stand zusätzlich dieser Satz:
 
 > Wenn die Daten eine Frage nicht beantworten oder sie mehrdeutig ist, sag das oder frag nach, statt eine ähnliche
 > Spalte oder eine eigene Deutung zu verwenden.
 
-| Frage | Haiku ohne Satz (Pilot + voller Lauf) | Haiku mit Satz | Antwort mit Satz |
+| Frage | Haiku ohne den Satz (Pilot + voller Lauf) | Haiku mit dem Satz | Was Haiku mit dem Satz geantwortet hat |
 |---|---|---|---|
-| U01 Marketingkanal | 0/4 | **0/5** | 5 × Abo-Kanal als Marketingkanal (web 9–16) |
-| M02 „Wie viele Kunden haben wir?“ | 0/4 | **0/5** | 5 × „FocusFlow hat 600 Kunden.“ |
+| U01 Marketingkanal | 0 von 4 richtig | **0 von 5** | 5-mal den Bezahlweg als Marketingkanal (web 9 bis 16) |
+| M02 „Wie viele Kunden haben wir?“ | 0 von 4 richtig | **0 von 5** | 5-mal „FocusFlow hat 600 Kunden.“ |
 
-**Kein Effekt.** Die Antworten mit dem Satz sind fast wortgleich mit denen ohne. Die Anweisung greift nur, wenn das
-Modell die Situation als „passt nicht“ oder „mehrdeutig“ erkennt. Genau das tut Haiku hier nicht: Für Haiku *ist*
-`channel` der Marketingkanal, und „Kunden“ *sind* die Zeilen in `customers`. Eine Regel über das Verhalten hilft nicht,
-wenn das Wissen fehlt, das die Regel auslösen würde.
+**Der Satz hat nichts bewirkt.** Die Antworten sind fast Wort für Wort dieselben wie ohne ihn.
 
-Das ist ein Hinweis für Branch (c): Nicht noch mehr Verhaltensregeln, sondern Fakten. Das Glossar sagt, was
-`channel` bedeutet, dass es keinen Marketingkanal gibt und welche Definitionen von „Kunde“ es gibt.
+Warum? Der Satz sagt: „Wenn etwas nicht passt, sag es.“ Das hilft nur, wenn das Modell merkt, dass etwas nicht passt.
+Haiku merkt es nicht. Für Haiku *ist* `channel` der Marketingkanal. Und „Kunden“ *sind* einfach alle Zeilen in der
+Tabelle `customers`. Eine Regel für das Verhalten hilft nicht, wenn das Wissen fehlt, das die Regel auslösen würde.
 
-Einschränkungen: 5 Läufe je Frage, ein Satz, eine Position (Ende des System-Prompts), nur Haiku. Ob der Satz bei
-Sonnet etwas ändert, ist nicht gemessen. Sonnet fragt dort ohnehin schon fast immer nach.
+**Was das für Branch (c) bedeutet:** Das Glossar sollte Fakten liefern, keine weiteren Regeln. Also zum Beispiel: Was
+bedeutet `channel`? Welche Daten gibt es nicht, etwa den Marketingkanal? Welche Bedeutungen kann „Kunde“ haben?
 
-## Kurz gesagt
+Einschränkungen: nur 5 Läufe je Frage, nur ein Satz an einer Stelle, nur Haiku. Bei Sonnet ist es nicht gemessen. Sonnet
+fragt dort aber ohnehin schon fast immer nach.
 
-1. Ein Request ist immer vollständig: System, Werkzeuge, ganzer Dialog. Bei Haiku kosten die Werkzeuge mehr Tokens
-   als das Schema.
-2. Input wächst je Aufruf um den eigenen Output und das Tool-Ergebnis. Bezahlt wird die Summe aller Aufrufe. Caching
-   macht das bei Sonnet fast kostenlos, bei Haiku greift es nicht.
-3. Falsche Antworten entstehen oft im ersten Satz, nicht in der SQL: Haiku deutet die Frage um, bevor es eine Zeile
-   schreibt.
-4. Thinking zeigt eine Zusammenfassung der Entscheidung, nicht den Beweis dafür.
-5. Ein Satz Verhaltensregel ändert nichts, wenn das Modell die Lücke nicht sieht. Fakten sind die Aufgabe des Glossars.
+## Das Wichtigste in fünf Sätzen
+
+1. Jeder Aufruf schickt alles mit: Anweisung, Schema, Werkzeuge und das ganze bisherige Gespräch. Bei Haiku kosten die
+   Werkzeuge mehr als das Schema.
+2. Jeder Aufruf wird größer, und jeder wird voll bezahlt. Große Abfrage-Ergebnisse machen das teuer, der Cache macht es
+   bei Sonnet billig.
+3. Falsche Antworten entstehen oft schon im ersten Satz, bevor überhaupt SQL geschrieben wird.
+4. Das Nachdenken zeigt eine Zusammenfassung der Entscheidung, aber keinen Beweis.
+5. Eine Regel wie „frag nach, wenn etwas unklar ist“ hilft nicht, wenn das Modell nicht merkt, dass etwas unklar ist.
+   Dafür braucht es Fakten, und die soll das Glossar liefern.
