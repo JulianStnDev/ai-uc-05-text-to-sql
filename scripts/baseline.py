@@ -67,7 +67,7 @@ def ausfuehren(client, conn, fragen, modell, variante, wiederholungen, budget, z
 def main() -> None:
     p = argparse.ArgumentParser(description="Messlauf gegen das Goldset (kostet API-Geld).")
     p.add_argument("--modell", choices=sorted(MODELLE), required=True)
-    p.add_argument("--variante", choices=["schema", "glossar"], default="schema")
+    p.add_argument("--variante", choices=["schema", "glossar", "glossar_spalten"], default="schema")
     p.add_argument("--wiederholungen", type=int, default=1)
     p.add_argument("--fragen", nargs="*")
     p.add_argument("--budget", type=float, required=True, help="harte Obergrenze in USD für diesen Lauf")

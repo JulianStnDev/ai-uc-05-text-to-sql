@@ -7,7 +7,8 @@ Bei art "ergebnis" führt der Harness die angegebene SQL selbst noch einmal aus.
 nicht der Antworttext (scripts/vergleich.py).
 
 Variante "schema" (Branch b): Das Modell sieht nur db/schema.sql. Variante "glossar" (Branch c): zusätzlich
-docs/GLOSSAR.md. DATA_NOTES.md und DATENRUNDGANG.md gelangen nie in einen Prompt (tests/test_copilot.py).
+docs/GLOSSAR.md. Variante "glossar_spalten" (nur Haiku, nach der Messung ergänzt, auf dieses Goldset hin optimiert):
+zusätzlich docs/SPALTEN.md. DATA_NOTES.md und DATENRUNDGANG.md gelangen nie in einen Prompt (tests/test_copilot.py).
 """
 
 import json
@@ -60,9 +61,11 @@ TOOLS = [
 
 def system_prompt(variante: str) -> str:
     teile = [ANWEISUNG, "Schema der Datenbank:\n```sql\n" + (WURZEL / "db" / "schema.sql").read_text(encoding="utf-8").strip() + "\n```"]
-    if variante == "glossar":
+    if variante in ("glossar", "glossar_spalten"):
         teile.append("Geschäftsdefinitionen:\n" + (WURZEL / "docs" / "GLOSSAR.md").read_text(encoding="utf-8").strip())
-    elif variante != "schema":
+    if variante == "glossar_spalten":
+        teile.append("Spaltenverzeichnis:\n" + (WURZEL / "docs" / "SPALTEN.md").read_text(encoding="utf-8").strip())
+    elif variante not in ("schema", "glossar"):
         raise ValueError(f"Unbekannte Variante: {variante!r}")
     return "\n\n".join(teile)
 

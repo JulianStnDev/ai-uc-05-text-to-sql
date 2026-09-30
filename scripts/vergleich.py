@@ -9,6 +9,7 @@ Regeln nach Fragetyp:
 - mehrdeutig:          richtig nur mit art "rueckfrage". Eine Zahl ist falsch, auch wenn sie zu einer Deutung passt.
 - unbeantwortbar:      richtig mit "keine_daten" oder "rueckfrage". Jedes Ergebnis (Ersatz-Abfrage) ist falsch.
 - Branch (c): Hat eine Frage `mit_glossar`, gilt dort deren Typ und SQL (M06: mit Glossar eindeutig, erwartet 374).
+  Das gilt für beide Glossar-Varianten („glossar“ und „glossar_spalten“), weil beide das Glossar enthalten.
 
 Zeilen-Vergleich:
 - Zahlen: Ganzzahlen exakt. Dezimalzahlen mit Toleranz von einer Einheit der letzten Stelle des erwarteten Werts
@@ -114,7 +115,7 @@ def bewerten(frage: dict, antwort: dict, variante: str = "schema") -> dict:
     if art not in ARTEN:
         raise ValueError(f"Unbekannte Antwortart: {art!r}")
     typ, ergebnis = frage["typ"], frage.get("ergebnis")
-    if variante == "glossar" and frage.get("mit_glossar"):
+    if variante in ("glossar", "glossar_spalten") and frage.get("mit_glossar"):
         typ, ergebnis = frage["mit_glossar"]["typ"], frage["mit_glossar"]["ergebnis"]
     if typ == "mehrdeutig":
         return {"richtig": art == "rueckfrage", "grund": "Rückfrage erwartet" if art != "rueckfrage" else "Rückfrage"}

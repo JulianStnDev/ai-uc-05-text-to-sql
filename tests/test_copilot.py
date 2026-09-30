@@ -56,7 +56,7 @@ def test_prompt_schema_enthaelt_nur_schema():
 
 
 def test_prompt_nie_mit_data_notes_oder_datenrundgang():
-    for variante in ("schema", "glossar"):
+    for variante in ("schema", "glossar", "glossar_spalten"):
         p = system_prompt(variante)
         for datei in ("DATA_NOTES.md", "DATENRUNDGANG.md"):
             zeilen = [z.strip() for z in (WURZEL / "docs" / datei).read_text(encoding="utf-8").splitlines() if len(z.strip()) > 40]
@@ -68,6 +68,23 @@ def test_prompt_glossar_nur_in_variante_glossar():
     assert glossar in system_prompt("glossar") and glossar not in system_prompt("schema")
     with pytest.raises(ValueError):
         system_prompt("alles")
+
+
+def test_spaltenverzeichnis_nur_in_der_zusatzvariante():
+    spalten = (WURZEL / "docs" / "SPALTEN.md").read_text(encoding="utf-8").strip()
+    glossar = (WURZEL / "docs" / "GLOSSAR.md").read_text(encoding="utf-8").strip()
+    p = system_prompt("glossar_spalten")
+    assert glossar in p and spalten in p and p.index(glossar) < p.index(spalten)
+    assert spalten not in system_prompt("glossar") and spalten not in system_prompt("schema")
+    # Keine Liste fehlender Daten (docs/decisions.md, 30.09.2026): das wäre die Antwort auf U01/U02.
+    assert not [w for w in ("Marketing", "NPS", "nicht erfasst", "Umfrage") if w in spalten]
+
+
+def test_glossar_eingefroren():
+    """Branch (c) misst den Entwurf aus Branch (a) unverändert (docs/decisions.md, 30.09.2026)."""
+    import hashlib
+    inhalt = (WURZEL / "docs" / "GLOSSAR.md").read_bytes()
+    assert hashlib.sha256(inhalt).hexdigest() == "e3d770e9c4edfdd5a0f9e978a920baaf1cf29f69d73d99dcb559c8b62aa38393"
 
 
 def test_tools_strikt_und_ohne_erzwungene_auswahl(ro):
