@@ -203,11 +203,58 @@ Geschäftsdefinitionen, nicht aus Erklärungen zu einzelnen Spalten.
 - Nur Schema: DE 189, US 121, GB 52, AU 45, JP 38 ✓
 - Glossar: *„Was meinst du mit ‚Kunden‘? Im Haus gibt es dafür drei Definitionen …“* ✗ nach Goldset, richtig nach Glossar.
 
+## Branch (d1): Antwortformat „karte“, Regressionstest am 30.09.2026
+
+Haiku 4.5 + Glossar mit strukturierter Antwort (Ergebnis, Begriffe, Annahmen, andere Deutung mit Zahl aus ausgeführter
+SQL, SQL), 27 × 3. Protokoll:
+[`laeufe/20260930-180934_haiku_glossar_karte.jsonl`](laeufe/20260930-180934_haiku_glossar_karte.jsonl), Kosten 0,86 USD
+(Budget 1,50, Schätzung 0,81).
+
+| | Haiku (c), Format kurz | Haiku (d1), Format karte |
+|---|---|---|
+| richtig | 70/81 (86 %) | 68/81 (84 %) |
+| pass^3 | 22/27 | 21/27 |
+| eindeutig | 39/42 | 39/42 |
+| mehrdeutig | 14/18 | 14/18 |
+| Fallen | 14/15 | 12/15 |
+| unbeantwortbar | 3/6 | 3/6 |
+| Kosten je 1.000 Fragen | 8,51 USD | 10,67 USD |
+| p95 | 9,4 s | 13,1 s |
+
+**Keine messbare Regression bei der Qualität** (84 % gegenüber 86 %, im Rauschen). Das Format kostet aber: 25 % mehr je
+Frage (mehr Output-Tokens für Annahmen und Deutung) und 3,7 s mehr beim p95.
+
+**Das vorhergesagte Risiko bei den M-Fragen:** Die Quote bleibt bei 14/18, aber einmal tritt das Muster auf. **M02,
+Wiederholung 3:** Statt nachzufragen antwortet Haiku *„FocusFlow hat 600 registrierte Kundenkonten“* und legt als andere
+Deutung die Pro-Kunden daneben (201, vom Harness ausgeführt). Die Karte ist ehrlich, aber geraten ist geraten: Bei einer
+mehrdeutigen Frage ist eine Rückfrage richtig. Im Lauf (c) ohne Kartenformat hat Haiku M02 in allen drei Läufen
+nachgefragt. M01 wird dagegen besser (3/3 statt 2/3). Die andere Deutung füllt Haiku in 18 von 81 Karten, am häufigsten
+bei E12, E03, M01 und U01.
+
+**Fehler-Rundgang, Unterschiede zu (c):**
+
+| Frage | (c) | (d1) | Ursache in (d1) |
+|---|---|---|---|
+| M02 | 3/3 | 2/3 | W3: Zahl (600) mit anderer Deutung (201) statt Rückfrage |
+| F01 | 3/3 | 1/3 | W1: `NOT IN`-Filter schließt nie etwas aus (686,44); W3: schließt zu viel aus (547,47). Die Annahme nennt beide Male die richtige Regel. |
+| F02 | 3/3 | 2/3 | W2: Rechnungen mit Doppelabbuchung ganz entfernt statt einmal gezählt (3.081,67) |
+| F03 | 2/3 | 3/3 | besser |
+| M01 | 2/3 | 3/3 | besser |
+
+Unverändert falsch wie in (c): E12 (Kalendertage), M06 (377 statt 374), U01 (Abrechnungsweg als Marketingkanal).
+
+**Stimmen die Annahmen zum SQL?** Von Hand geprüft an E05, F03, F04, M02 und U01 in allen drei Wiederholungen, dazu vier
+auffällige Fälle: [docs/ANTWORTEN.md](../docs/ANTWORTEN.md). Kurz: Annahmen sind Absichtserklärungen, keine Prüfung. Sie
+legen Deutungsfehler offen (U01: „Kanal = channel in subscriptions“), aber nicht Umsetzungsfehler. Bei F01, F02 und M06
+steht die richtige Regel in der Karte und eine falsche Umsetzung im SQL. E05 W1 behauptet „je Rechnung nur einmal“, setzt
+es nicht um und liegt trotzdem richtig, weil es im Mai keine Doppelabbuchung gab.
+
 ## Rohausgabe `scripts/auswerten.py`
 
 | Modell | Variante | richtig | pass^k | E | M | F | U | Kosten/1000 Req. | Kosten/1000 richtige | p50 | p95 | SQL/Frage | Fehler |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | claude-haiku-4-5 | glossar | 70/81 (86 %) | 22/27 (k=3) | 39/42 | 14/18 | 14/15 | 3/6 | 8.51 USD | 9.85 USD | 4.6 s | 9.4 s | 0.9 | 0 |
+| claude-haiku-4-5 | glossar · karte | 68/81 (84 %) | 21/27 (k=3) | 39/42 | 14/18 | 12/15 | 3/6 | 10.67 USD | 12.70 USD | 5.9 s | 13.1 s | 1.0 | 0 |
 | claude-haiku-4-5 | glossar_spalten | 69/81 (85 %) | 20/27 (k=3) | 38/42 | 14/18 | 13/15 | 4/6 | 9.91 USD | 11.64 USD | 4.8 s | 10.6 s | 0.9 | 1 |
 | claude-haiku-4-5 | schema | 47/81 (58 %) | 14/27 (k=3) | 32/42 | 9/18 | 3/15 | 3/6 | 6.54 USD | 11.27 USD | 4.7 s | 9.9 s | 1.1 | 1 |
 | claude-sonnet-5-5 | glossar | 78/81 (96 %) | 26/27 (k=3) | 39/42 | 18/18 | 15/15 | 6/6 | 10.14 USD | 10.53 USD | 5.0 s | 8.1 s | 0.8 | 0 |
@@ -238,6 +285,38 @@ Geschäftsdefinitionen, nicht aus Erklärungen zu einzelnen Spalten.
 | F05 | ✓ | ✓ | ✓ |
 | M01 | ✓ | ✓ | ✗ ergebnis |
 | M02 | ✓ | ✓ | ✓ |
+| M03 | ✓ | ✓ | ✓ |
+| M04 | ✓ | ✓ | ✓ |
+| M05 | ✓ | ✓ | ✓ |
+| M06 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| U01 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| U02 | ✓ | ✓ | ✓ |
+
+### claude-haiku-4-5 · glossar · karte
+
+| Frage | Wdh. 1 | Wdh. 2 | Wdh. 3 |
+|---|---|---|---|
+| E01 | ✓ | ✓ | ✓ |
+| E02 | ✓ | ✓ | ✓ |
+| E03 | ✓ | ✓ | ✓ |
+| E04 | ✓ | ✓ | ✓ |
+| E05 | ✓ | ✓ | ✓ |
+| E06 | ✓ | ✓ | ✓ |
+| E07 | ✓ | ✓ | ✓ |
+| E08 | ✓ | ✓ | ✓ |
+| E10 | ✓ | ✓ | ✓ |
+| E11 | ✓ | ✓ | ✓ |
+| E12 | ✗ ergebnis | ✗ ergebnis | ✗ ergebnis |
+| E13 | ✓ | ✓ | ✓ |
+| E14 | ✓ | ✓ | ✓ |
+| E15 | ✓ | ✓ | ✓ |
+| F01 | ✗ ergebnis | ✓ | ✗ ergebnis |
+| F02 | ✓ | ✗ ergebnis | ✓ |
+| F03 | ✓ | ✓ | ✓ |
+| F04 | ✓ | ✓ | ✓ |
+| F05 | ✓ | ✓ | ✓ |
+| M01 | ✓ | ✓ | ✓ |
+| M02 | ✓ | ✓ | ✗ ergebnis |
 | M03 | ✓ | ✓ | ✓ |
 | M04 | ✓ | ✓ | ✓ |
 | M05 | ✓ | ✓ | ✓ |

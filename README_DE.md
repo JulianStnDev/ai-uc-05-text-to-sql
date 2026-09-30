@@ -68,10 +68,10 @@ Mit dem Schema allein beantwortet Sonnet 5.5 91 % von 81 Läufen richtig (Haiku 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/ergebnis_de_dunkel.svg">
-  <img src="docs/img/ergebnis_de_hell.svg" alt="Gruppiertes Balkendiagramm: Anteil richtiger Antworten je Fragetyp (eindeutig, mehrdeutig, Fallen, unbeantwortbar). Haiku 4.5 nur Schema: 76, 50, 20, 50 %; mit Glossar: 93, 78, 93, 50 %; mit Glossar und Spaltenverzeichnis (nach der Messung ergänzt): 90, 78, 87, 67 %. Sonnet 5.5 nur Schema: 93, 94, 80, 100 %; mit Glossar: 93, 100, 100, 100 %.">
+  <img src="docs/img/ergebnis_de_hell.svg" alt="Gruppiertes Balkendiagramm: Anteil richtiger Antworten je Fragetyp (eindeutig, mehrdeutig, Fallen, unbeantwortbar). Haiku 4.5 nur Schema: 76, 50, 20, 50 %; mit Glossar: 93, 78, 93, 50 %; mit Glossar im Format Antwortkarte: 93, 78, 80, 50 %; mit Glossar und Spaltenverzeichnis (nach der Messung ergänzt): 90, 78, 87, 67 %. Sonnet 5.5 nur Schema: 93, 94, 80, 100 %; mit Glossar: 93, 100, 100, 100 %.">
 </picture>
 
-*Richtige Antworten je Fragetyp, 3 Läufe je Frage; schraffiert = mit Glossar, kreuzschraffiert = nach der Messung ergänzte Zusatzvariante; die Grafik erzeugt `scripts/grafik.py` aus `evals/laeufe/`.*
+*Richtige Antworten je Fragetyp, 3 Läufe je Frage; schraffiert = mit Glossar, gepunktet = mit Glossar im Format Antwortkarte (Branch d), kreuzschraffiert = nach der Messung ergänzte Zusatzvariante; die Grafik erzeugt `scripts/grafik.py` aus `evals/laeufe/`.*
 
 | | Haiku (b) | **Haiku (c)** | Sonnet (b) | **Sonnet (c)** |
 |---|---|---|---|---|
@@ -87,6 +87,8 @@ Mit Glossar steigt Haiku 4.5 von 58 % auf 86 % richtige Antworten, Sonnet 5.5 vo
 **Bekannte Grenze, E02:** Das Glossar sagt, „Kunde“ allein ist mehrdeutig und muss präzisiert werden. Sonnet hält sich daran und fragt bei „den fünf Ländern mit den meisten Kunden“ in allen drei Läufen nach; das Goldset erwartet die Zahl der Konten. Glossar und Goldset widersprechen sich hier, die Bewertung bleibt wie gemessen. Ohne diesen Widerspruch stünde Sonnet (c) bei 81/81.
 
 **Zusatzvariante, nur Haiku: Glossar + Spaltenverzeichnis, nach der Messung ergänzt und auf dieses Goldset hin optimiert.** Je missverständlicher Spalte eine neutrale Zeile (etwa `subscriptions.channel` = Abrechnungsweg), keine Liste fehlender Daten. Ergebnis: 69/81 (85 %) gegenüber 70/81 mit Glossar allein, also Rauschen; U01 1 von 3. Weil das Verzeichnis mit Wissen über die Testfragen geschrieben wurde, sagte selbst ein Gewinn wenig über neue Fragen (Overfitting aufs Testset); sauber prüfen ließe es sich nur mit einem Holdout aus Fragen, die beim Schreiben niemand kannte. Vorher/Nachher-Beispiele und Fehler-Rundgang: [evals/results.md](evals/results.md).
+
+**Branch (d1), Antwortkarte: Regressionstest am 30.09.2026.** Das Werkzeug `antworten` liefert jetzt strukturierte Felder: Ergebnis, verwendete Glossar-Begriffe, Annahmen, eine andere naheliegende Deutung mit ihrer Zahl (vom Harness aus ausgeführter SQL berechnet, nie aus dem Text des Modells) und die SQL. Haiku + Glossar, 27 × 3: 68/81 (84 %) gegenüber 70/81 in (c), also keine messbare Regression, aber 25 % mehr Kosten je Frage und 3,7 s mehr beim p95. Das vorhergesagte Risiko trat einmal auf: Bei M02 antwortete Haiku „600 Konten“ und legte die Pro-Kunden (201) als andere Deutung daneben, statt nachzufragen. Die Handprüfung der Annahmen ([docs/ANTWORTEN.md](docs/ANTWORTEN.md)) zeigt: Sie beschreiben die Absicht, nicht das, was das SQL tut. Mehrere Karten nennen die richtige Regel (etwa „je Rechnung nur einmal“) über SQL, das sie falsch umsetzt.
 
 ## Kosten & Latenz
 Gemessen an je 81 Läufen je Modell und Variante:

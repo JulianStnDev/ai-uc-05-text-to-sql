@@ -69,8 +69,10 @@ def svg(serien: list[dict], fragen: dict, sprache: str, modus: str) -> str:
     breite, links, rechts, oben, unten = 720, 44, 16, 50 + 20 * zeilen_legende + 16, 56 + 18 * fussnote
     hoehe_plot = 220
     hoehe = oben + hoehe_plot + unten
-    balken, luecke = 24, 6
     gruppe = (breite - links - rechts) / len(TYPEN)
+    luecke = 6 if len(serien) <= 4 else 4
+    balken = min(24, (gruppe - 28) / len(serien) - luecke)  # bei vielen Serien schmaler, Gruppen behalten Abstand
+    eng = balken < 22  # dann nur die Zahl über dem Balken, die Achse zeigt Prozent
     y = lambda p: oben + hoehe_plot * (1 - p)  # noqa: E731
 
     teile = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{breite}" height="{hoehe}" viewBox="0 0 {breite} {hoehe}" '
@@ -131,7 +133,7 @@ def svg(serien: list[dict], fragen: dict, sprache: str, modus: str) -> str:
             if pfad:
                 teile.append(f'<path d="{pfad}" fill="{fuellung(s)}"><title>{name}: {richtig}/{n} {t["laeufe"]}</title></path>')
             teile.append(f'<text x="{bx + balken / 2:.1f}" y="{top - 6:.1f}" font-size="10.5" text-anchor="middle" '
-                         f'fill="{tinte["text"]}">{anteil * 100:.0f}\u202f%</text>')
+                         f'fill="{tinte["text"]}">{anteil * 100:.0f}{"" if eng else chr(0x202f) + "%"}</text>')
         anzahl = sum(f["typ"] == typ for f in fragen.values())
         teile.append(f'<text x="{mitte:.1f}" y="{oben + hoehe_plot + 20}" font-size="12" text-anchor="middle" '
                      f'fill="{tinte["text"]}">{t["typen"][g]}</text>')

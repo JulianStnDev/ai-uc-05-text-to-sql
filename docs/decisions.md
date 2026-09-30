@@ -214,3 +214,13 @@ Schätzung: Prompt bei Haiku 3.439 Tokens (Glossar allein 2.898, nur Schema 1.73
   zu liefern statt nachzufragen.
 - Regressionstest freigegeben: Haiku + Glossar, Format „karte“, 27 × 3, Budget 1,50 USD, Schätzung 0,81 USD.
   Vergleich mit 70/81 aus (c). Auswertung und Grafik unterscheiden Läufe jetzt auch nach Format.
+
+## 2026-09-30: Ergebnis Branch (d1)
+
+- Regressionstest Haiku + Glossar im Format „karte“: 68/81 (84 %) gegenüber 70/81 in (c). Keine messbare Regression.
+  Kosten 0,86 USD (Budget 1,50). Mehrkosten des Formats: 25 % je Frage, p95 +3,7 s.
+- Das vorhergesagte Risiko trat einmal auf (M02 W3: Zahl mit anderer Deutung statt Rückfrage). Die M-Quote bleibt 14/18.
+- Handprüfung der Annahmen (docs/ANTWORTEN.md): Annahmen beschreiben die Absicht, nicht das SQL. Folgen für (d2): Die
+  Oberfläche zeigt SQL und Annahmen nebeneinander. Zahlen, die nicht aus ausgeführter SQL stammen (etwa im Text einer
+  Rückfrage), werden nicht hervorgehoben. Keine automatische Annahmen-Prüfung in (d).
+- Die Grafik skaliert die Balkenbreite mit der Zahl der Serien und zeigt bei Enge nur die Zahl ohne „%“.
