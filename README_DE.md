@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: Ein Analytics-Copilot auf Daten mit Fallen
 
-> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Gemessen ist noch kein Modell.
+> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b) ist vorbereitet (Harness, Werkzeuge, Auswertung, Tests ohne API); gemessen ist noch kein Modell.
 
 ## Problem
 Produkt- und Support-Teams der fiktiven Habit-Tracker-App FocusFlow stellen Business-Fragen („Wie viel Umsatz hatten wir im Q2?“, „Wie viele Kunden haben im August gekündigt?“) und warten Tage auf einen Analysten. Ein Copilot, der SQL schreibt und ausführt, könnte in Sekunden antworten, aber nur, wenn die Zahl stimmt. Text-to-SQL scheitert selten an der Syntax. Es scheitert an Geschäftsregeln, die das Schema nicht zeigt: Doppelabbuchungen, Store-Käufe in einer eigenen Tabelle, Kündigung vs. Abo-Ende, Erstattungen, Zeitzonen, eine irreführend benannte Spalte. Und er soll bei mehrdeutigen Fragen zurückfragen statt zu raten.
@@ -27,6 +27,8 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 - `db/schema.sql`: sieben Tabellen, ohne erklärende Kommentare (in Branch b das Einzige, was das Modell sieht).
 - `docs/DATA_NOTES.md`: die Fallen, nur für Menschen, nie Teil eines Prompts.
 - `docs/GLOSSAR.md`: Geschäftsdefinitionen (Entwurf), bekommt das Modell erst in Branch (c).
+- `scripts/copilot.py`: der Copilot. Zwei strikte Werkzeuge, `sql_ausfuehren` (führt SQL als `analyst_ro` aus, höchstens 5 je Frage) und `antworten` (Ergebnis mit SQL, Rückfrage oder „keine Daten“). Der Harness führt die Antwort-SQL erneut aus; bewertet wird dieses Ergebnis, nicht der Text.
+- `scripts/baseline.py`: Messlauf mit hartem Budget, zeigt ohne `--ja` nur die Schätzung. `scripts/auswerten.py`: Trefferquote je Fragetyp, Kosten je 1000 Requests, p50/p95-Latenz.
 
 ## Daten
 600 Kunden, 265 Abos, 94 Kündigungen, 400 Web-Zahlungen, 366 Store-Käufe, 33 Erstattungen, 26.798 Logins zwischen 01.10.2025 und 30.09.2026, deterministisch (fester Seed). Jede Falle ändert das Ergebnis einer naiven Abfrage messbar:
@@ -57,7 +59,9 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # einmalig: Datenbank, Rollen, schreibt .env
 .venv/bin/python scripts/laden.py                          # Tabellen anlegen und füllen (deterministisch)
 .venv/bin/python scripts/goldset_berechnen.py              # erwartete Ergebnisse als analyst_ro
-.venv/bin/python -m pytest                                 # Daten, Rechte, Goldset (ohne API)
+.venv/bin/python -m pytest                                 # Daten, Rechte, Goldset, Harness (ohne API)
+.venv/bin/python scripts/baseline.py --modell haiku --budget 0.50        # nur Schätzung; --ja startet (kostet Geld)
+.venv/bin/python scripts/auswerten.py evals/laeufe/*.jsonl                # Auswertung (ohne API)
 ```
 
 ## Learnings
