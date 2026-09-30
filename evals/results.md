@@ -20,11 +20,21 @@ Tabelle und Matrizen erzeugt von `scripts/auswerten.py`. pass^3 heißt: Die Frag
 | unbeantwortbar | 3/6 | 6/6 |
 | Kosten gesamt | 0,53 USD | 0,77 USD |
 | Kosten je 1.000 Fragen | 6,54 USD | 9,51 USD |
+| Kosten je 1.000 richtige Antworten | 11,27 USD | 10,41 USD |
 | p50 / p95 | 4,7 s / 9,9 s | 5,3 s / 11,5 s |
 
 Kosten zusammen 1,30 USD (Budgets 1,00 und 3,50 USD, Schätzung 1,80–3,00 USD). Sonnet ist je Frage nur rund 45 % teurer
 als Haiku, trotz doppeltem Tokenpreis: Das Prompt-Caching greift (290.000 gelesene Cache-Tokens), und Sonnet braucht
 weniger Aufrufe (1,9 statt 2,1 je Frage). Bei Haiku greift der Cache nicht (Prompt unter 4.096 Tokens).
+
+Je richtige Antwort ist Sonnet günstiger: 0,770701 USD / 74 = 10,41 USD je 1.000 richtige Antworten, Haiku
+0,529623 USD / 47 = 11,27 USD.
+
+### Bekannte Grenze des Goldsets
+
+Ohne Glossar sind E05 und F02 faktisch mehrdeutig: „Umsatz“ kann brutto oder nach Store-Gebühr gemeint sein, mit oder
+ohne Erstattungen. Sonnets Rückfragen dort (3 von 6 Läufen) sind vertretbar. Die Regeln bleiben eingefroren und die
+Bewertung bleibt wie gemessen: E05 und F02 zählen als falsch. In Branch (c) definiert das Glossar „Umsatz“.
 
 ### Wo Sonnet besser ist
 
@@ -68,10 +78,10 @@ zählt als falsch.
 
 ## Rohausgabe `scripts/auswerten.py`
 
-| Modell | Variante | richtig | pass^k | E | M | F | U | Kosten/1000 Req. | p50 | p95 | SQL/Frage | Fehler |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| claude-haiku-4-5 | schema | 47/81 (58 %) | 14/27 (k=3) | 32/42 | 9/18 | 3/15 | 3/6 | 6.54 USD | 4.7 s | 9.9 s | 1.1 | 1 |
-| claude-sonnet-5-5 | schema | 74/81 (91 %) | 24/27 (k=3) | 39/42 | 17/18 | 12/15 | 6/6 | 9.51 USD | 5.3 s | 11.5 s | 0.9 | 0 |
+| Modell | Variante | richtig | pass^k | E | M | F | U | Kosten/1000 Req. | Kosten/1000 richtige | p50 | p95 | SQL/Frage | Fehler |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| claude-haiku-4-5 | schema | 47/81 (58 %) | 14/27 (k=3) | 32/42 | 9/18 | 3/15 | 3/6 | 6.54 USD | 11.27 USD | 4.7 s | 9.9 s | 1.1 | 1 |
+| claude-sonnet-5-5 | schema | 74/81 (91 %) | 24/27 (k=3) | 39/42 | 17/18 | 12/15 | 6/6 | 9.51 USD | 10.41 USD | 5.3 s | 11.5 s | 0.9 | 0 |
 
 ### claude-haiku-4-5 · schema
 
