@@ -86,3 +86,27 @@ Vergleichsregeln, als Code in `scripts/vergleich.py` und festgelegt, bevor irgen
 Selbsttest (`tests/test_vergleich.py`): Jede Referenz gilt als richtig. Jede naive Antwort der Fallen gilt als falsch,
 die Toleranz verschluckt also keine Falle. Jede Deutung einer M-Frage gilt ohne Rückfrage als falsch.
 
+## 2026-09-30: Harness für die Baseline (Branch b), vor dem Pilot
+
+- **Eigener, kurzer Tool-Loop statt Tool-Runner:** SQL-Ausführungen müssen gezählt und gedeckelt, Tokens je Aufruf
+  protokolliert und die Antwort-SQL neu ausgeführt werden. Zwei Werkzeuge mit `strict: true`: `sql_ausfuehren` und
+  `antworten` (art ergebnis | rueckfrage | keine_daten). Keine erzwungene Werkzeugwahl (Sonnet 5.5 lehnt sie ab).
+  Endet ein Aufruf ohne Werkzeug, gibt es genau eine Erinnerung, danach zählt die Frage als falsch.
+- **Bewertet wird die Antwort-SQL, neu ausgeführt vom Harness,** nicht der Antworttext und nicht die letzte Probe-Abfrage.
+- **Grenzen je Frage:** höchstens 5 SQL-Ausführungen, 8 Modellaufrufe, 50 Zeilen im Tool-Ergebnis (die Bewertung
+  nutzt alle Zeilen), 15 s Statement-Timeout der Rolle.
+- **Prompt (Variante schema):** kurze Anweisung, „Heute ist der 30.09.2026“, Sitzung in UTC, die drei Antwortarten,
+  dazu `db/schema.sql` wörtlich. Kein Glossar, keine Beispiele. Ein Test belegt, dass keine Zeile aus DATA_NOTES oder
+  DATENRUNDGANG im Prompt steht. Die Antwortart „Rückfrage“ zu nennen ist fair, weil sie in beiden Varianten gleich ist.
+- **Modelle:** Haiku 4.5 ohne Thinking. Sonnet 5.5 mit adaptivem Thinking (lässt sich dort nicht abschalten) und
+  effort `medium` (Empfehlung für mehrstufige Werkzeugnutzung). Thinking-Blöcke gehen unverändert zurück.
+- **Keine serverseitigen Fallbacks** bei Ablehnungen, obwohl sie für Sonnet 5.5 sonst empfohlen sind: Sonst antwortet
+  in der Messung unbemerkt ein anderes Modell. Eine Ablehnung zählt als Fehler und steht im Protokoll.
+- **Automatisches Prompt-Caching** eingeschaltet. Es ändert keine Antworten. Ob es bei so kurzen Prompts überhaupt
+  greift, zeigt der Pilot (`cache_lesen` im Protokoll).
+- **Kostenschutz:** `scripts/baseline.py` zeigt ohne `--ja` nur die Schätzung. Mit `--budget` bricht es ab, bevor die
+  nächste Frage das Budget überschreiten könnte (Obergrenze je Frage: Haiku 0,05, Sonnet 0,15 USD). Jede Zeile wird
+  sofort geschrieben.
+- **Schätzung** (vor dem Pilot, noch nicht gemessen): Haiku ca. 0,010 USD je Frage, Sonnet 5.5 ca. 0,034 USD.
+  Pilot 27 × Haiku ca. 0,27 USD. Voller Lauf 27 × 3 × 2 Modelle ca. 3,50 USD (schlimmstenfalls 6,60 USD).
+

@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: An Analytics Copilot on Trap-Laden Data
 
-> Status: in progress. Branch (a) is done: database, data and goldset. No model has been measured yet.
+> Status: in progress. Branch (a) is done: database, data and goldset. Branch (b) is prepared (harness, tools, evaluation, tests without API); no model has been measured yet.
 
 ## Problem
 Product and support teams at the fictional habit-tracker app FocusFlow ask business questions ("How much revenue did we make in Q2?", "How many customers cancelled in August?") and wait days for an analyst. A copilot that writes and runs SQL could answer in seconds, but only if the number is right. Text-to-SQL rarely fails on syntax. It fails on business rules the schema does not show: duplicate charges, store purchases in a separate table, cancellation vs. end of subscription, refunds, time zones, a misleadingly named column. And it should ask back when a question is ambiguous instead of guessing.
@@ -27,6 +27,8 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 - `db/schema.sql`: seven tables, no explanatory comments (it is all the model sees in branch b).
 - `docs/DATA_NOTES.md`: the traps, for humans only, never part of a prompt.
 - `docs/GLOSSAR.md`: business definitions (draft), only given to the model in branch (c).
+- `scripts/copilot.py`: the copilot. Two strict tools, `sql_ausfuehren` (runs SQL as `analyst_ro`, at most 5 per question) and `antworten` (result with SQL, clarifying question, or "no data"). The harness re-runs the answer SQL; that result is graded, not the prose.
+- `scripts/baseline.py`: measurement run with a hard budget, shows only the estimate without `--ja`. `scripts/auswerten.py`: accuracy per question type, cost per 1000 requests, p50/p95 latency.
 
 ## Data
 600 customers, 265 subscriptions, 94 cancellations, 400 web payments, 366 store transactions, 33 refunds, 26,798 logins between 01.10.2025 and 30.09.2026, deterministic (fixed seed). Each trap changes the result of a naive query measurably:
@@ -57,7 +59,9 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # once: database, roles, writes .env
 .venv/bin/python scripts/laden.py                          # create and fill tables (deterministic)
 .venv/bin/python scripts/goldset_berechnen.py              # expected results as analyst_ro
-.venv/bin/python -m pytest                                 # data, permissions, goldset (no API)
+.venv/bin/python -m pytest                                 # data, permissions, goldset, harness (no API)
+.venv/bin/python scripts/baseline.py --modell haiku --budget 0.50        # estimate only; --ja runs it (costs money)
+.venv/bin/python scripts/auswerten.py evals/laeufe/*.jsonl                # evaluation (no API)
 ```
 
 ## Learnings
