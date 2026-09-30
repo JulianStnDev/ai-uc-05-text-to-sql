@@ -212,3 +212,35 @@ def test_auswertung_ueber_jsonl(ro, tmp_path):
 
 def test_perzentil_naechster_rang():
     assert auswerten.perzentil([1, 2, 3, 4, 100], 0.95) == 100 and auswerten.perzentil([], 0.5) is None
+
+
+# ---------- Experimente (docs/ANATOMIE.md) ----------
+
+class Roh(NS):
+    """Antwort mit model_dump wie beim SDK, damit der Mitschnitt geprüft werden kann."""
+
+    def model_dump(self, **_):
+        return {"stop_reason": self.stop_reason, "content": [vars(b) for b in self.content],
+                "usage": vars(self.usage)}
+
+
+def test_experimente_aendern_den_messlauf_nicht(ro):
+    c = FakeClient([antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))])
+    beantworten(c, ro, FRAGEN["U01"]["frage"], "sonnet")
+    assert c.anfragen[0]["system"] == system_prompt("schema") and "thinking" not in c.anfragen[0]
+
+
+def test_zusatz_thinking_und_mitschnitt(ro):
+    erster = Roh(**vars(antwort(werkzeug("sql_ausfuehren", sql="SELECT 1 AS x"))))
+    zweiter = Roh(**vars(antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))))
+    c, mitschnitt = FakeClient([erster, zweiter]), []
+    beantworten(c, ro, FRAGEN["U01"]["frage"], "sonnet", zusatz="Frag nach.", thinking_anzeigen=True,
+                mitschnitt=mitschnitt)
+    assert c.anfragen[0]["system"].endswith("\n\nFrag nach.")
+    assert c.anfragen[0]["thinking"] == {"type": "adaptive", "display": "summarized"}
+    assert len(mitschnitt) == 2 and json.dumps(mitschnitt)
+    assert len(mitschnitt[0]["request"]["messages"]) == 1 and len(mitschnitt[1]["request"]["messages"]) == 3
+    assert mitschnitt[1]["response"]["content"][0]["name"] == "antworten"
+    c = FakeClient([antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))])
+    beantworten(c, ro, FRAGEN["U01"]["frage"], "haiku", thinking_anzeigen=True)
+    assert "thinking" not in c.anfragen[0]  # Haiku läuft ohne Thinking

@@ -146,3 +146,15 @@ Details in evals/results.md. Keine Regeländerung nach dem Lauf.
 Beobachtung für Branch (c): E05 und F02 (Umsatz) scheitern bei beiden Modellen. Sonnet fragt dort in 3 von 6 Läufen
 nach der Umsatzdefinition. Das Glossar legt sie fest, deshalb sollten hier die größten Unterschiede zwischen (b) und (c)
 zu sehen sein.
+
+## 2026-09-30: Anatomie eines Laufs (Lern-Zwischenstufe vor Branch c)
+
+- Drei Harness-Schalter nur für Experimente, in Messläufen immer aus (Test belegt, dass der Request dort unverändert
+  bleibt): `mitschnitt` (roher Request und rohe Response je Aufruf), `zusatz` (ein Satz am Ende des System-Prompts),
+  `thinking_anzeigen` (Sonnet mit `display: "summarized"`; ändert die Sichtbarkeit, nicht das Thinking).
+- Experimente liegen in `evals/anatomie/`, nie in `evals/laeufe/`, damit sie nicht als Messlauf zählen.
+- Freigabe von Julian: Budget 0,20 USD, verbraucht 0,0827 USD (Schätzung 0,080). Der zweite Sonnet-Versuch bei U01 war
+  nötig, weil Sonnet beim ersten Mal nicht gedacht hat (`thinking_tokens: 0`).
+- Ergebnis „ein Satz Prompt“: 0/10 bei Haiku (U01, M02), kein Unterschied zum vollen Lauf. Für Branch (c) folgt daraus:
+  Das Glossar liefert Fakten (was `channel` bedeutet, was fehlt, welche Kundendefinitionen es gibt), keine weiteren
+  Verhaltensregeln. Details: docs/ANATOMIE.md.
