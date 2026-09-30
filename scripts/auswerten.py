@@ -68,7 +68,8 @@ def kennzahlen(laeufe: list[dict], fragen: dict) -> dict:
 def bericht(laeufe: list[dict], fragen: dict) -> str:
     gruppen = defaultdict(list)
     for l in laeufe:
-        gruppen[(l["modell"], l["variante"])].append(l)
+        variante = l["variante"] + (" · karte" if l.get("format") == "karte" else "")
+        gruppen[(l["modell"], variante)].append(l)
     zeilen = ["| Modell | Variante | richtig | pass^k | E | M | F | U | Kosten/1000 Req. | Kosten/1000 richtige | p50 | p95 | SQL/Frage | Fehler |",
               "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     matrizen = []

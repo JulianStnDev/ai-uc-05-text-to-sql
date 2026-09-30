@@ -5,7 +5,7 @@
 Liest alle vollständigen Messläufe aus evals/laeufe/ (alle 27 Fragen, mindestens 3 Wiederholungen; Pilot und
 Teilläufe zählen nicht), je Modell und Variante den neuesten. Bewertet neu mit scripts/vergleich.py und schreibt
 docs/img/ergebnis_{de,en}_{hell,dunkel}.svg. Farbe = Modell, Muster = Variante: voll = nur Schema, Schraffur = mit
-Glossar (Branch c), Kreuzschraffur mit Sternchen = Zusatzvariante mit Spaltenverzeichnis (nach der Messung ergänzt, auf
+Glossar (Branch c), Punkte = mit Glossar im Antwortformat „karte“ (Branch d), Kreuzschraffur mit Sternchen = Zusatzvariante mit Spaltenverzeichnis (nach der Messung ergänzt, auf
 dieses Goldset hin optimiert; Fußnote in der Grafik). Weitere Läufe erscheinen automatisch als weitere Balken.
 """
 
@@ -22,11 +22,13 @@ TYPEN = ["eindeutig", "mehrdeutig", "falle", "unbeantwortbar"]
 TEXTE = {
     "de": {"titel": "Anteil richtiger Antworten je Fragetyp",
            "typen": ["eindeutig", "mehrdeutig", "Fallen", "unbeantwortbar"],
-           "varianten": {"schema": "nur Schema", "glossar": "Schema + Glossar", "glossar_spalten": "+ Spaltenverzeichnis*"},
+           "varianten": {"schema": "nur Schema", "glossar": "Schema + Glossar", "glossar_spalten": "+ Spaltenverzeichnis*",
+                         "glossar_karte": "+ Antwortkarte"},
            "fussnote": "* nach der Messung ergänzt, auf dieses Goldset hin optimiert", "fragen": "Fragen", "laeufe": "Läufe"},
     "en": {"titel": "Share of correct answers by question type",
            "typen": ["unambiguous", "ambiguous", "traps", "unanswerable"],
-           "varianten": {"schema": "schema only", "glossar": "schema + glossary", "glossar_spalten": "+ column notes*"},
+           "varianten": {"schema": "schema only", "glossar": "schema + glossary", "glossar_spalten": "+ column notes*",
+                         "glossar_karte": "+ answer card"},
            "fussnote": "* added after the measurement, tuned to this goldset", "fragen": "questions", "laeufe": "runs"},
 }
 MODELLNAMEN = {"claude-haiku-4-5": "Haiku 4.5", "claude-sonnet-5-5": "Sonnet 5.5"}
@@ -43,10 +45,11 @@ def vollstaendige_laeufe(fragen: dict) -> list[dict]:
         laeufe = laden([pfad])
         if not laeufe or {l["frage_id"] for l in laeufe} != set(fragen) or max(l["wiederholung"] for l in laeufe) < 3:
             continue
-        schluessel = (laeufe[0]["modell"], laeufe[0]["variante"])
+        variante = laeufe[0]["variante"] + ("_karte" if laeufe[0].get("format") == "karte" else "")
+        schluessel = (laeufe[0]["modell"], variante)
         neueste[schluessel] = laeufe  # Dateinamen beginnen mit Zeitstempel, sortiert = der letzte gewinnt
     serien = []
-    rang = {"schema": 0, "glossar": 1, "glossar_spalten": 2}
+    rang = {"schema": 0, "glossar": 1, "glossar_karte": 2, "glossar_spalten": 3}
     for (modell, variante), laeufe in sorted(neueste.items(), key=lambda x: (x[0][0], rang.get(x[0][1], 9), x[0][1])):
         je_typ = defaultdict(lambda: [0, 0])
         for l in laeufe:
@@ -78,6 +81,9 @@ def svg(serien: list[dict], fragen: dict, sprache: str, modus: str) -> str:
         teile.append(f'<pattern id="schraffur-{i}" width="6" height="6" patternUnits="userSpaceOnUse" '
                      f'patternTransform="rotate(45)"><rect width="6" height="6" fill="{farbe[m]}" fill-opacity="0.25"/>'
                      f'<line x1="0" y1="0" x2="0" y2="6" stroke="{farbe[m]}" stroke-width="3"/></pattern>')
+        teile.append(f'<pattern id="punkte-{i}" width="6" height="6" patternUnits="userSpaceOnUse">'
+                     f'<rect width="6" height="6" fill="{farbe[m]}" fill-opacity="0.25"/>'
+                     f'<circle cx="3" cy="3" r="1.6" fill="{farbe[m]}"/></pattern>')
         teile.append(f'<pattern id="kreuz-{i}" width="7" height="7" patternUnits="userSpaceOnUse" '
                      f'patternTransform="rotate(45)"><rect width="7" height="7" fill="{farbe[m]}" fill-opacity="0.2"/>'
                      f'<line x1="0" y1="0" x2="0" y2="7" stroke="{farbe[m]}" stroke-width="2"/>'
@@ -85,17 +91,19 @@ def svg(serien: list[dict], fragen: dict, sprache: str, modus: str) -> str:
 
     def fuellung(s: dict) -> str:
         i = modelle.index(s["modell"])
-        return {"schema": farbe[s["modell"]], "glossar": f"url(#schraffur-{i})"}.get(s["variante"], f"url(#kreuz-{i})")
+        return {"schema": farbe[s["modell"]], "glossar": f"url(#schraffur-{i})",
+                "glossar_karte": f"url(#punkte-{i})"}.get(s["variante"], f"url(#kreuz-{i})")
     teile.append("</defs>")
     teile.append(f'<text x="{links}" y="24" font-size="15" font-weight="600" fill="{tinte["text"]}">{t["titel"]}</text>')
 
     # Legende: eine Zeile je Modell, daneben die Varianten. Muster wie am Balken, Text in Textfarbe.
+    max_je_zeile = max(sum(s["modell"] == m for s in serien) for m in modelle)
     for zeile, m in enumerate(modelle):
         zeile_y = 48 + zeile * 20
         teile.append(f'<text x="{links}" y="{zeile_y}" font-size="12" font-weight="600" fill="{tinte["text"]}">'
                      f'{MODELLNAMEN.get(m, m)}</text>')
         for k, s in enumerate(x for x in serien if x["modell"] == m):
-            x = links + 90 + k * 190
+            x = links + 90 + k * min(190, (breite - links - rechts - 90) // max_je_zeile)
             teile.append(f'<rect x="{x}" y="{zeile_y - 10}" width="12" height="12" rx="2" fill="{fuellung(s)}"/>')
             teile.append(f'<text x="{x + 18}" y="{zeile_y}" font-size="12" fill="{tinte["text"]}">'
                          f'{t["varianten"].get(s["variante"], s["variante"])}</text>')

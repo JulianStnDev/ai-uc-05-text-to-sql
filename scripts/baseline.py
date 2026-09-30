@@ -44,7 +44,8 @@ def bewertung(frage: dict, lauf: dict, variante: str) -> dict:
     return bewerten(frage, lauf["antwort"], variante)
 
 
-def ausfuehren(client, conn, fragen, modell, variante, wiederholungen, budget, ziel: Path, ausgabe=print) -> dict:
+def ausfuehren(client, conn, fragen, modell, variante, wiederholungen, budget, ziel: Path, ausgabe=print,
+               format: str = "kurz") -> dict:
     """Führt die Läufe aus und hängt je Lauf eine JSONL-Zeile an `ziel` an. Gibt eine Zusammenfassung zurück."""
     summe, richtig, n = 0.0, 0, 0
     for w in range(1, wiederholungen + 1):
@@ -52,10 +53,10 @@ def ausfuehren(client, conn, fragen, modell, variante, wiederholungen, budget, z
             if summe + OBERGRENZE_JE_FRAGE[modell] > budget:
                 ausgabe(f"Budget {budget:.2f} USD erreicht ({summe:.4f} USD verbraucht), Abbruch vor {f['id']} (Wdh. {w}).")
                 return {"laeufe": n, "richtig": richtig, "kosten_usd": summe, "abgebrochen": True}
-            lauf = beantworten(client, conn, f["frage"], modell, variante)
+            lauf = beantworten(client, conn, f["frage"], modell, variante, format=format)
             b = bewertung(f, lauf, variante)
             zeile = {"zeit": datetime.now(timezone.utc).isoformat(timespec="seconds"), "frage_id": f["id"], "typ": f["typ"],
-                     "wiederholung": w, "modell": MODELLE[modell]["id"], "variante": variante, **lauf, "bewertung": b}
+                     "wiederholung": w, "modell": MODELLE[modell]["id"], "variante": variante, "format": format, **lauf, "bewertung": b}
             with ziel.open("a", encoding="utf-8") as datei:
                 datei.write(json.dumps(zeile, ensure_ascii=False, default=str) + "\n")
             summe, n, richtig = summe + lauf["kosten_usd"], n + 1, richtig + b["richtig"]
@@ -68,6 +69,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Messlauf gegen das Goldset (kostet API-Geld).")
     p.add_argument("--modell", choices=sorted(MODELLE), required=True)
     p.add_argument("--variante", choices=["schema", "glossar", "glossar_spalten"], default="schema")
+    p.add_argument("--format", choices=["kurz", "karte"], default="kurz", help="karte = strukturierte Antwort (Branch d)")
     p.add_argument("--wiederholungen", type=int, default=1)
     p.add_argument("--fragen", nargs="*")
     p.add_argument("--budget", type=float, required=True, help="harte Obergrenze in USD für diesen Lauf")
@@ -85,10 +87,11 @@ def main() -> None:
     if not os.environ.get("ANTHROPIC_API_KEY"):
         sys.exit("ANTHROPIC_API_KEY fehlt in .env.")
     import anthropic
-    ziel = WURZEL / "evals" / "laeufe" / f"{datetime.now(timezone.utc):%Y%m%d-%H%M%S}_{a.modell}_{a.variante}.jsonl"
+    ziel = WURZEL / "evals" / "laeufe" / f"{datetime.now(timezone.utc):%Y%m%d-%H%M%S}_{a.modell}_{a.variante}{'_karte' if a.format == 'karte' else ''}.jsonl"
     ziel.parent.mkdir(parents=True, exist_ok=True)
     with verbinden(os.environ["ANALYTICS_RO_URL"]) as conn:
-        z = ausfuehren(anthropic.Anthropic(), conn, fragen, a.modell, a.variante, a.wiederholungen, a.budget, ziel)
+        z = ausfuehren(anthropic.Anthropic(), conn, fragen, a.modell, a.variante, a.wiederholungen, a.budget, ziel,
+                       format=a.format)
     print(f"\n{z['richtig']}/{z['laeufe']} richtig, {z['kosten_usd']:.4f} USD, Protokoll: {ziel.relative_to(WURZEL)}")
 
 

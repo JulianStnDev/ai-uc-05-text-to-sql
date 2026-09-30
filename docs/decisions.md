@@ -200,3 +200,17 @@ Schätzung: Prompt bei Haiku 3.439 Tokens (Glossar allein 2.898, nur Schema 1.73
   Keine Änderung an Regeln, Goldset oder Bewertung: E02 zählt als falsch. Für eine nächste Goldset-Fassung wäre E02 als
   „Konten“ zu formulieren oder als mehrdeutig zu führen; beides erst mit neuer Messung.
 - Keine Regeländerung nach den Läufen.
+
+## 2026-09-30: Branch (d1): Antwortformat „karte“
+
+- Das Werkzeug `antworten` hat im Format „karte“ strukturierte Felder: `ergebnis` (ein Satz), `begriffe` (verwendete
+  Glossar-Begriffe), `annahmen` (höchstens 4), `andere_deutung` und `andere_deutung_sql`, `sql`. Keine Konfidenzzahl.
+- **Zahlen nur aus ausgeführter SQL:** Die Zahl zur anderen Deutung führt der Harness selbst aus `andere_deutung_sql`
+  aus, wie die Antwort-SQL. Sie wird angezeigt, aber nicht bewertet.
+- Eigener Schalter (`format="karte"`), Standard bleibt „kurz“: Prompt und Werkzeug der Messungen (b) und (c) sind
+  unverändert (Test). Die Bewertung ist unverändert: `art` und das Ergebnis der Antwort-SQL.
+- Der Prompt beschreibt nur die Felder. Bewusst **kein** Satz wie „bei Mehrdeutigkeit lieber nachfragen“: Der
+  Regressionstest soll zeigen, ob das Feld „andere Deutung“ Haiku dazu bringt, bei M-Fragen eine Zahl mit Alternative
+  zu liefern statt nachzufragen.
+- Regressionstest freigegeben: Haiku + Glossar, Format „karte“, 27 × 3, Budget 1,50 USD, Schätzung 0,81 USD.
+  Vergleich mit 70/81 aus (c). Auswertung und Grafik unterscheiden Läufe jetzt auch nach Format.

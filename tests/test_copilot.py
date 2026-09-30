@@ -261,3 +261,37 @@ def test_zusatz_thinking_und_mitschnitt(ro):
     c = FakeClient([antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))])
     beantworten(c, ro, FRAGEN["U01"]["frage"], "haiku", thinking_anzeigen=True)
     assert "thinking" not in c.anfragen[0]  # Haiku läuft ohne Thinking
+
+
+# ---------- Antwortformat „karte“ (Branch d) ----------
+
+def test_format_kurz_bleibt_wie_in_b_und_c(ro):
+    c = FakeClient([antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))])
+    beantworten(c, ro, FRAGEN["U01"]["frage"], "haiku", "glossar")
+    assert c.anfragen[0]["tools"] == TOOLS and c.anfragen[0]["system"] == system_prompt("glossar")
+
+
+def test_format_karte_felder_und_zahl_der_anderen_deutung(ro):
+    karte = dict(art="ergebnis", ergebnis="600 Konten.", begriffe=["Konto"], annahmen=["Kunde = Konto"],
+                 andere_deutung="Pro-Kunden zum Stichtag", andere_deutung_sql="SELECT 201 AS kunden",
+                 sql="SELECT count(*) FROM customers")
+    c = FakeClient([antwort(werkzeug("antworten", **karte))])
+    lauf = beantworten(c, ro, FRAGEN["M02"]["frage"], "haiku", "glossar", format="karte")
+    assert c.anfragen[0]["tools"][1]["input_schema"]["required"][-1] == "sql"
+    assert "Antwortformat" in c.anfragen[0]["system"]
+    a = lauf["antwort"]
+    assert a["text"] == "600 Konten." and a["zeilen"] == [[600]]
+    assert a["karte"]["andere_deutung_zeilen"] == [[201]]      # vom Harness ausgeführt, nicht vom Modell behauptet
+    assert a["karte"]["begriffe"] == ["Konto"] and a["karte"]["annahmen"] == ["Kunde = Konto"]
+    assert not baseline.bewertung(FRAGEN["M02"], lauf, "glossar")["richtig"]  # Zahl statt Rückfrage bleibt falsch
+
+
+def test_format_karte_ohne_andere_deutung_und_rueckfrage(ro):
+    karte = dict(art="rueckfrage", ergebnis="Welche Kunden?", begriffe=[], annahmen=[], andere_deutung="",
+                 andere_deutung_sql="", sql="")
+    c = FakeClient([antwort(werkzeug("antworten", **karte))])
+    lauf = beantworten(c, ro, FRAGEN["M02"]["frage"], "haiku", "glossar", format="karte")
+    assert lauf["antwort"]["karte"]["andere_deutung"] is None and lauf["antwort"]["karte"]["andere_deutung_zeilen"] is None
+    assert baseline.bewertung(FRAGEN["M02"], lauf, "glossar")["richtig"]
+    with pytest.raises(ValueError):
+        beantworten(FakeClient([]), ro, "x", "haiku", format="lang")
