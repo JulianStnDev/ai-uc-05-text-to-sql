@@ -89,24 +89,42 @@ def sql_ausfuehren(conn, sql: str) -> dict:
         return {"ok": False, "fehler": f"{type(e).__name__}: {str(e).strip()[:500]}"}
 
 
+def _block(b):
+    """SDK-Objekte (Content Blocks) für den Mitschnitt in dicts verwandeln."""
+    return b.model_dump(mode="json", exclude_none=True) if hasattr(b, "model_dump") else str(b)
+
+
 def kosten_usd(modell: str, usage) -> float:
     p = MODELLE[modell]
     ein = (usage.input_tokens + 1.25 * (usage.cache_creation_input_tokens or 0) + 0.1 * (usage.cache_read_input_tokens or 0))
     return (ein * p["input"] + usage.output_tokens * p["output"]) / 1e6
 
 
-def beantworten(client, conn, frage: str, modell: str, variante: str = "schema") -> dict:
-    """Ein Durchlauf für eine Frage. Gibt Antwort, Protokoll, Tokens, Kosten und Dauer zurück."""
+def beantworten(client, conn, frage: str, modell: str, variante: str = "schema", *, zusatz: str | None = None,
+                thinking_anzeigen: bool = False, mitschnitt: list | None = None) -> dict:
+    """Ein Durchlauf für eine Frage. Gibt Antwort, Protokoll, Tokens, Kosten und Dauer zurück.
+
+    Nur für Experimente (docs/ANATOMIE.md), in Messläufen nie gesetzt:
+    zusatz: ein Satz, der an den System-Prompt angehängt wird.
+    thinking_anzeigen: Sonnet liefert eine Zusammenfassung des Thinkings (display "summarized") statt eines leeren
+        Blocks. Das Thinking selbst ändert sich dadurch nicht, nur seine Sichtbarkeit.
+    mitschnitt: Liste, an die je Aufruf der rohe Request und die rohe Response als JSON-fähiges dict angehängt werden."""
     m = MODELLE[modell]
-    params = {"model": m["id"], "max_tokens": MAX_TOKENS, "system": system_prompt(variante), "tools": TOOLS,
+    system = system_prompt(variante) + (f"\n\n{zusatz}" if zusatz else "")
+    params = {"model": m["id"], "max_tokens": MAX_TOKENS, "system": system, "tools": TOOLS,
               "cache_control": {"type": "ephemeral"}}
     if "effort" in m:
         params["output_config"] = {"effort": m["effort"]}
+    if thinking_anzeigen and "effort" in m:
+        params["thinking"] = {"type": "adaptive", "display": "summarized"}
     messages = [{"role": "user", "content": frage}]
     sql_protokoll, aufrufe, erinnert, antwort, fehler = [], [], False, None, None
     start = time.perf_counter()
     for _ in range(MAX_AUFRUFE):
         r = client.messages.create(**params, messages=messages)
+        if mitschnitt is not None:
+            mitschnitt.append({"request": json.loads(json.dumps({**params, "messages": messages}, default=_block)),
+                               "response": r.model_dump(mode="json", exclude_none=True)})
         u = r.usage
         aufrufe.append({"input": u.input_tokens, "output": u.output_tokens,
                         "cache_schreiben": u.cache_creation_input_tokens or 0, "cache_lesen": u.cache_read_input_tokens or 0,
