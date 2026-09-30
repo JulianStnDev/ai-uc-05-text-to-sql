@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="362" viewBox="0 0 720 362" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Share of correct answers by question type">
+<title>Share of correct answers by question type</title>
+<defs>
+<pattern id="schraffur-0" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#3987e5" fill-opacity="0.25"/><line x1="0" y1="0" x2="0" y2="6" stroke="#3987e5" stroke-width="3"/></pattern>
+<pattern id="schraffur-1" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#199e70" fill-opacity="0.25"/><line x1="0" y1="0" x2="0" y2="6" stroke="#199e70" stroke-width="3"/></pattern>
+</defs>
+<text x="44" y="24" font-size="15" font-weight="600" fill="#e6edf3">Share of correct answers by question type</text>
+<rect x="44" y="38" width="12" height="12" rx="2" fill="#3987e5"/>
+<text x="62" y="48" font-size="12" fill="#e6edf3">Haiku 4.5 · schema only</text>
+<rect x="304" y="38" width="12" height="12" rx="2" fill="#199e70"/>
+<text x="322" y="48" font-size="12" fill="#e6edf3">Sonnet 5.5 · schema only</text>
+<line x1="44" x2="704" y1="306.0" y2="306.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="310.0" font-size="11" text-anchor="end" fill="#9198a1">0 %</text>
+<line x1="44" x2="704" y1="251.0" y2="251.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="255.0" font-size="11" text-anchor="end" fill="#9198a1">25 %</text>
+<line x1="44" x2="704" y1="196.0" y2="196.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="200.0" font-size="11" text-anchor="end" fill="#9198a1">50 %</text>
+<line x1="44" x2="704" y1="141.0" y2="141.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="145.0" font-size="11" text-anchor="end" fill="#9198a1">75 %</text>
+<line x1="44" x2="704" y1="86.0" y2="86.0" stroke="#30363d" stroke-width="1"/>
+<text x="36" y="90.0" font-size="11" text-anchor="end" fill="#9198a1">100 %</text>
+<path d="M99.5,306 V142.4 Q99.5,138.4 103.5,138.4 H119.5 Q123.5,138.4 123.5,142.4 V306 Z" fill="#3987e5"><title>Haiku 4.5 · schema only: 32/42 runs</title></path>
+<text x="111.5" y="132.4" font-size="10.5" text-anchor="middle" fill="#e6edf3">76 %</text>
+<path d="M129.5,306 V105.7 Q129.5,101.7 133.5,101.7 H149.5 Q153.5,101.7 153.5,105.7 V306 Z" fill="#199e70"><title>Sonnet 5.5 · schema only: 39/42 runs</title></path>
+<text x="141.5" y="95.7" font-size="10.5" text-anchor="middle" fill="#e6edf3">93 %</text>
+<text x="126.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">unambiguous</text>
+<text x="126.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">14 questions × 3</text>
+<path d="M264.5,306 V200.0 Q264.5,196.0 268.5,196.0 H284.5 Q288.5,196.0 288.5,200.0 V306 Z" fill="#3987e5"><title>Haiku 4.5 · schema only: 9/18 runs</title></path>
+<text x="276.5" y="190.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">50 %</text>
+<path d="M294.5,306 V102.2 Q294.5,98.2 298.5,98.2 H314.5 Q318.5,98.2 318.5,102.2 V306 Z" fill="#199e70"><title>Sonnet 5.5 · schema only: 17/18 runs</title></path>
+<text x="306.5" y="92.2" font-size="10.5" text-anchor="middle" fill="#e6edf3">94 %</text>
+<text x="291.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">ambiguous</text>
+<text x="291.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">6 questions × 3</text>
+<path d="M429.5,306 V266.0 Q429.5,262.0 433.5,262.0 H449.5 Q453.5,262.0 453.5,266.0 V306 Z" fill="#3987e5"><title>Haiku 4.5 · schema only: 3/15 runs</title></path>
+<text x="441.5" y="256.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">20 %</text>
+<path d="M459.5,306 V134.0 Q459.5,130.0 463.5,130.0 H479.5 Q483.5,130.0 483.5,134.0 V306 Z" fill="#199e70"><title>Sonnet 5.5 · schema only: 12/15 runs</title></path>
+<text x="471.5" y="124.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">80 %</text>
+<text x="456.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">traps</text>
+<text x="456.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">5 questions × 3</text>
+<path d="M594.5,306 V200.0 Q594.5,196.0 598.5,196.0 H614.5 Q618.5,196.0 618.5,200.0 V306 Z" fill="#3987e5"><title>Haiku 4.5 · schema only: 3/6 runs</title></path>
+<text x="606.5" y="190.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">50 %</text>
+<path d="M624.5,306 V90.0 Q624.5,86.0 628.5,86.0 H644.5 Q648.5,86.0 648.5,90.0 V306 Z" fill="#199e70"><title>Sonnet 5.5 · schema only: 6/6 runs</title></path>
+<text x="636.5" y="80.0" font-size="10.5" text-anchor="middle" fill="#e6edf3">100 %</text>
+<text x="621.5" y="326" font-size="12" text-anchor="middle" fill="#e6edf3">unanswerable</text>
+<text x="621.5" y="342" font-size="11" text-anchor="middle" fill="#9198a1">2 questions × 3</text>
+</svg>

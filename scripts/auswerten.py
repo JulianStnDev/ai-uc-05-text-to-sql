@@ -58,6 +58,7 @@ def kennzahlen(laeufe: list[dict], fragen: dict) -> dict:
     return {"richtig": sum(richtig), "n": len(laeufe), "je_typ": je_typ, "fallen": dict(sorted(fallen.items())),
             "kosten_je_1000": 1000 * sum(l["kosten_usd"] for l in laeufe) / len(laeufe),
             "kosten_gesamt": sum(l["kosten_usd"] for l in laeufe),
+            "kosten_je_1000_richtige": 1000 * sum(l["kosten_usd"] for l in laeufe) / max(1, sum(richtig)),
             "pass_k": sum(all(v) for v in je_frage.values()), "fragen": len(je_frage),
             "wdh": max(len(v) for v in je_frage.values()), "p50": perzentil(dauern, 0.5), "p95": perzentil(dauern, 0.95),
             "sql_je_frage": sum(len(l["sql_ausfuehrungen"]) for l in laeufe) / len(laeufe),
@@ -68,17 +69,17 @@ def bericht(laeufe: list[dict], fragen: dict) -> str:
     gruppen = defaultdict(list)
     for l in laeufe:
         gruppen[(l["modell"], l["variante"])].append(l)
-    zeilen = ["| Modell | Variante | richtig | pass^k | E | M | F | U | Kosten/1000 Req. | p50 | p95 | SQL/Frage | Fehler |",
-              "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    zeilen = ["| Modell | Variante | richtig | pass^k | E | M | F | U | Kosten/1000 Req. | Kosten/1000 richtige | p50 | p95 | SQL/Frage | Fehler |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     matrizen = []
     for (modell, variante), gruppe in sorted(gruppen.items()):
         k = kennzahlen(gruppe, fragen)
         typ = " | ".join(f"{a}/{b}" for a, b in k["je_typ"].values())
         zeilen.append(f"| {modell} | {variante} | {k['richtig']}/{k['n']} ({100 * k['richtig'] / k['n']:.0f} %) | "
                       f"{k['pass_k']}/{k['fragen']} (k={k['wdh']}) | {typ} | "
-                      f"{k['kosten_je_1000']:.2f} USD | {k['p50']:.1f} s | {k['p95']:.1f} s | {k['sql_je_frage']:.1f} | {k['fehler']} |")
+                      f"{k['kosten_je_1000']:.2f} USD | {k['kosten_je_1000_richtige']:.2f} USD | {k['p50']:.1f} s | {k['p95']:.1f} s | {k['sql_je_frage']:.1f} | {k['fehler']} |")
         if k["abweichend"]:
-            zeilen.append(f"| ⚠ {k['abweichend']} gespeicherte Bewertungen weichen von der Neubewertung ab | | | | | | | | | | | | |")
+            zeilen.append(f"| ⚠ {k['abweichend']} gespeicherte Bewertungen weichen von der Neubewertung ab | | | | | | | | | | | | | |")
         wdh = sorted({l["wiederholung"] for l in gruppe})
         matrix = [f"\n### {modell} · {variante}\n", "| Frage | " + " | ".join(f"Wdh. {w}" for w in wdh) + " |",
                   "|---|" + "---|" * len(wdh)]

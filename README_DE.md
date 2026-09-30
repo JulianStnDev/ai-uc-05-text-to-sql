@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: Ein Analytics-Copilot auf Daten mit Fallen
 
-> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b): Harness steht, Pilot gemessen (Haiku 4.5, 16/27); der volle Lauf mit Haiku und Sonnet folgt.
+> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b) ist gemessen: nur Schema, Sonnet 5.5 91 %, Haiku 4.5 58 % richtig. Branch (c) (Glossar) folgt.
 
 ## Problem
 Produkt- und Support-Teams der fiktiven Habit-Tracker-App FocusFlow stellen Business-Fragen („Wie viel Umsatz hatten wir im Q2?“, „Wie viele Kunden haben im August gekündigt?“) und warten Tage auf einen Analysten. Ein Copilot, der SQL schreibt und ausführt, könnte in Sekunden antworten, aber nur, wenn die Zahl stimmt. Text-to-SQL scheitert selten an der Syntax. Es scheitert an Geschäftsregeln, die das Schema nicht zeigt: Doppelabbuchungen, Store-Käufe in einer eigenen Tabelle, Kündigung vs. Abo-Ende, Erstattungen, Zeitzonen, eine irreführend benannte Spalte. Und er soll bei mehrdeutigen Fragen zurückfragen statt zu raten.
@@ -49,10 +49,42 @@ Die Vergleichsregeln stehen vor der ersten Messung als Code fest ([scripts/vergl
 
 **Pilot (Haiku 4.5, 27 × 1, nur Schema): 16/27 richtig.** Der Pilot hat das Messinstrument kalibriert: Drei richtige Antworten waren als falsch gewertet worden (eine Top-1-Antwort mit angehängter übriger Rangliste und eine Referenz, die mehr verlangte als die Frage). Diese Regeln wurden als datierte Entscheidung korrigiert und vor dem vollen Lauf eingefroren. Details, Kosten je Frage und Fehler-Rundgang: [evals/pilot.md](evals/pilot.md).
 
+**Branch (b), nur Schema: voller Lauf am 30.09.2026, 27 Fragen × 3 Wiederholungen je Modell.**
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/ergebnis_de_dunkel.svg">
+  <img src="docs/img/ergebnis_de_hell.svg" alt="Gruppiertes Balkendiagramm: Anteil richtiger Antworten je Fragetyp, nur Schema. Haiku 4.5: eindeutig 76 %, mehrdeutig 50 %, Fallen 20 %, unbeantwortbar 50 %. Sonnet 5.5: 93 %, 94 %, 80 %, 100 %.">
+</picture>
+
+*Richtige Antworten je Fragetyp, 3 Läufe je Frage; die Grafik erzeugt `scripts/grafik.py` aus `evals/laeufe/`.*
+
+| | Haiku 4.5 | Sonnet 5.5 (effort medium) |
+|---|---|---|
+| richtig (81 Läufe) | 47/81 (58 %) | **74/81 (91 %)** |
+| pass^3 (in allen 3 Läufen richtig) | 14/27 | **24/27** |
+| eindeutig | 32/42 | 39/42 |
+| mehrdeutig: Rückfrage | 9/18 | 17/18 |
+| Fallen | 3/15 | 12/15 |
+| unbeantwortbar | 3/6 | 6/6 |
+
+Mit dem Schema allein beantwortet Sonnet 5.5 91 % von 81 Läufen richtig (Haiku 4.5: 58 %). Sonnet erkennt fünf der sechs Fallen in jedem Lauf und fragt bei mehrdeutigen Fragen fast immer nach. Haiku fragt bei drei der sechs mehrdeutigen Fragen immer nach, bei den anderen drei nie. Beide Modelle scheitern am Umsatz (E05, F02): Sonnet findet alle Bausteine (Store-Tabelle, Doppelabbuchungen, Erstattungen, Brutto gegenüber Auszahlung), fragt dann aber nach, ob der Umsatz brutto oder netto gemeint ist, oder wählt eine andere Definition als die Referenz. Ohne Glossar ist „Umsatz“ tatsächlich mehrdeutig, genau dafür ist Branch (c) da. Details und Fehler-Rundgang: [evals/results.md](evals/results.md).
+
+**Bekannte Grenze des Goldsets:** Ohne Glossar sind E05 und F02 faktisch mehrdeutig („Umsatz“ brutto oder nach Store-Gebühr, mit oder ohne Erstattungen). Sonnets Rückfragen dort sind vertretbar. Die Regeln bleiben eingefroren, die Bewertung bleibt wie gemessen (E05 und F02 zählen als falsch); in Branch (c) definiert das Glossar „Umsatz“.
+
 ## Kosten & Latenz
-- Kosten pro 1000 Requests: folgt (Branch b)
-- p95-Latenz: folgt (Branch b)
-- Qualitätsmetrik: folgt (Branch b)
+Branch (b), nur Schema, gemessen an je 81 Läufen:
+
+| | Haiku 4.5 | Sonnet 5.5 |
+|---|---|---|
+| Kosten pro 1000 Requests | 6,54 USD | 9,51 USD |
+| Kosten pro 1000 richtige Antworten | 11,27 USD | 10,41 USD |
+| p95-Latenz | 9,9 s | 11,5 s |
+| Qualität: richtig / pass^3 | 58 % / 14 von 27 | 91 % / 24 von 27 |
+
+- Sonnet kostet je Frage nur rund 45 % mehr, obwohl der Tokenpreis doppelt so hoch ist: Das Prompt-Caching greift (der Prompt liegt über Sonnets Minimum von 512 Tokens, aber unter Haikus 4.096), und Sonnet braucht weniger Aufrufe je Frage.
+- Sonnet 5.5: 9,51 USD pro 1000 Requests bei 11,5 s p95-Latenz.
+- Je richtige Antwort ist Sonnet günstiger als Haiku: 10,41 gegenüber 11,27 USD pro 1000 richtige Antworten, weil Haiku 42 % seiner Antworten falsch beantwortet.
+- Pilot und voller Lauf von Branch (b) kosteten zusammen 1,48 USD.
 - Branch (a) machte keine API-Aufrufe. Neon läuft im Free-Tier.
 
 ## Lokal ausführen
@@ -64,6 +96,7 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # einmalig: Datenbank,
 .venv/bin/python -m pytest                                 # Daten, Rechte, Goldset, Harness (ohne API)
 .venv/bin/python scripts/baseline.py --modell haiku --budget 0.50        # nur Schätzung; --ja startet (kostet Geld)
 .venv/bin/python scripts/auswerten.py evals/laeufe/*.jsonl                # Auswertung (ohne API)
+.venv/bin/python scripts/grafik.py                                        # Grafik (ohne API)
 ```
 
 ## Learnings
