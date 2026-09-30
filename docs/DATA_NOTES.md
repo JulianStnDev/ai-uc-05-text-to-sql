@@ -61,7 +61,8 @@ genau dem einen Fehler, sodass der Unterschied genau diese Falle belegt (Werte a
   Kunden (Grund `price_increase`). Von den Kündigungen im August enden 16 Abos im August, 19 im September und der Rest
   (Jahresabos) erst 2026/2027.
 - **Richtig:** Kündigungen nach `cancelled_at` zählen.
-- **Naiv:** Abos mit `ends_at` im August, das sind überwiegend Kündigungen aus dem Juli.
+- **Naiv:** Abos mit `ends_at` im August: nur 16 Augustkündiger mit kurzer Restlaufzeit plus 2 aus dem Juli.
+  Die übrigen 39 Augustkündiger haben noch Zugang und fehlen.
 
 ### 4. Erstattungen mindern den Umsatz
 - **Gebaut:** 33 Erstattungen: 9 Widerrufe von Web-Jahresabos innerhalb von 14 Tagen (`withdrawal_14d`, voller Betrag,

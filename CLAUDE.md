@@ -9,8 +9,8 @@ stimmt und ob er bei mehrdeutigen Fragen zurückfragt statt zu raten. Verglichen
 - **Branch (c):** Schema + Glossar mit Geschäftsdefinitionen (`docs/GLOSSAR.md`)
 
 Die Daten enthalten absichtlich Fallen (Doppelabbuchungen, Store vs. Web, Kündigung ≠ Abo-Ende, Erstattungen,
-Zeitzonen, irreführende Spalte). Details in `docs/DATA_NOTES.md`. Die Datei ist Dokumentation für Menschen und darf
-**nie** Teil eines Prompts sein. `db/schema.sql` bleibt ohne erklärende Kommentare, weil es in Branch (b) das Einzige ist,
+Zeitzonen, irreführende Spalte). Details in `docs/DATA_NOTES.md`, echte Beispielzeilen in `docs/DATENRUNDGANG.md`.
+Beide Dateien sind Dokumentation für Menschen und dürfen **nie** Teil eines Prompts sein. `db/schema.sql` bleibt ohne erklärende Kommentare, weil es in Branch (b) das Einzige ist,
 was das Modell sieht.
 
 ## Datenbank
