@@ -114,11 +114,15 @@ A small web app on top of the copilot, same stack as UC7: FastAPI, Jinja2 and ht
 - **Ask:** type a question or click an example. The answer card shows the result large, the glossary definitions used (hover for the definition), the assumptions, another plausible reading with its number, the SQL with its result (collapsible) and the cost of the question.
 - **Compare:** the same question side by side, either *schema only vs. + glossary* or *Haiku vs. Sonnet*. Both calls run in parallel.
 - **Gallery:** every recorded run of the full measurements as clickable examples, graded with the frozen rules, without API cost (precursor of the replay for going online).
-- **Cost cap:** $0.25 per session (signed cookie) and $3.00 per month for the whole app. Each question first books a reserve (the per-question ceiling of the model) and then settles the real cost, so two parallel calls cannot overrun the cap. The ledger lives in SQLite locally and in Postgres on Cloud Run, never in process memory, and never in the analytics database, where the app has read-only rights.
+- **Cost cap:** $0.25 per session (signed cookie), $3.00 per month for the whole app and a hard $0.05 per question. Each question first books a reserve of $0.05 and then settles the real cost, so two parallel calls cannot overrun the cap. The ledger lives in SQLite locally and in Postgres on Cloud Run, never in process memory, and never in the analytics database, where the app has read-only rights.
 - **Read-only:** SQL runs only as `analyst_ro`; the app checks `current_user` on first access and refuses any other role. Error messages never show connection details.
 - **Ready for Cloud Run:** `Dockerfile` (python:3.13-slim, non-root user, port from `$PORT`), `/health`, secrets only from the environment, `.gcloudignore` excludes `.env`.
 
-What the answer card makes visible, following [docs/ANTWORTEN.md](docs/ANTWORTEN.md): numbers come only from executed SQL; the other reading's number is computed by the harness; numbers in the text of a clarifying question get a note that nobody executed them; assumptions sit next to the SQL because they state intent, not what the SQL does.
+What the answer card makes visible, following [docs/ANTWORTEN.md](docs/ANTWORTEN.md): numbers come only from executed SQL; the other reading's number is computed by the harness; numbers in the text of a clarifying question get a note that nobody executed them. Assumptions are labelled *as stated by the model*, and a simple code check marks each assumption about a known glossary rule (one payment per invoice, store payout, refunds deducted, customer time zone, cancellation vs. end, stated period) with **✓ verified in SQL** or **⚠ not found in SQL**; all four wrong cards from ANTWORTEN.md get ⚠. A ✓ only means the pattern is in the SQL, not that the number is right. Each question is capped at $0.05 in the harness (stopped before the next call would exceed it).
+
+![Gallery card E05, run 1: graded correct, but the assumption "count each invoice once" is marked "not found in SQL" — the number is right only because May had no duplicate charge](docs/img/app_badges_e05.png)
+
+*E05, run 1 from the answer-card run: graded correct, yet ⚠ on "each invoice once" – the SQL sums all payments per invoice and is right only because May had no duplicate charge. The screenshots below were taken before the badge check was added.*
 
 | Answer card (E05, Haiku + glossary) | Clarifying question (M02) |
 |---|---|

@@ -21,7 +21,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import dienst, galerie
+from . import annahmen, dienst, galerie
 from .deckel import Kostenbuch
 from .einstellungen import Einstellungen, aus_umgebung
 
@@ -74,7 +74,7 @@ def create_app(einstellungen: Einstellungen | None = None, antwort_fn: Callable 
     vorlagen = Jinja2Templates(directory=HIER / "templates")
     vorlagen.env.filters.update(zahl=zahl, kurz=kurz, hat_zahl=lambda t: bool(re.search(r"\d{2,}", t or "")))
     vorlagen.env.globals.update(MODELLE=dienst.MODELLE, VARIANTEN=dienst.VARIANTEN,
-                                definition=lambda b: dienst.definition(b, begriffe))
+                                definition=lambda b: dienst.definition(b, begriffe), pruefe=annahmen.pruefen)
 
     @app.middleware("http")
     async def sitzung(request: Request, call_next):
@@ -133,20 +133,26 @@ def create_app(einstellungen: Einstellungen | None = None, antwort_fn: Callable 
         paare = VERGLEICHE.get(modus, VERGLEICHE["glossar"])
         return seite(request, "_vergleich.html", frage=frage.strip()[:MAX_FRAGE], paare=paare)
 
-    @app.get("/gallery", response_class=HTMLResponse)
-    def gallery(request: Request):
-        return seite(request, "gallery.html", fragen=fragen, laeufe=laeufe)
-
-    @app.get("/gallery/{lauf}/{frage_id}/{wdh}", response_class=HTMLResponse)
-    def gallery_karte(request: Request, lauf: str, frage_id: str, wdh: int):
+    def galerie_karte(lauf: str, frage_id: str, wdh: int) -> dict | None:
         l = next((x for x in laeufe if x.schluessel == lauf), None)
         z = l.zeilen.get((frage_id, wdh)) if l else None
         if z is None:
+            return None
+        return dict(lauf=z, frage=nach_id[frage_id]["frage"], modell="sonnet" if "sonnet" in z["modell"] else "haiku",
+                    variante=z["variante"], titel=f"{l.name} · run {wdh}", gespeichert=True,
+                    erwartet=galerie.erwartet(nach_id[frage_id], z["variante"]), richtig=z["richtig"])
+
+    @app.get("/gallery", response_class=HTMLResponse)
+    def gallery(request: Request, lauf: str = "", frage: str = "", wdh: int = 1):
+        """Mit ?lauf=…&frage=…&wdh=… ist eine gespeicherte Karte direkt verlinkbar (ohne API-Kosten)."""
+        return seite(request, "gallery.html", fragen=fragen, laeufe=laeufe, karte=galerie_karte(lauf, frage, wdh))
+
+    @app.get("/gallery/{lauf}/{frage_id}/{wdh}", response_class=HTMLResponse)
+    def gallery_karte(request: Request, lauf: str, frage_id: str, wdh: int):
+        ctx = galerie_karte(lauf, frage_id, wdh)
+        if ctx is None:
             return HTMLResponse("Not found.", status_code=404)
-        modell = "sonnet" if "sonnet" in z["modell"] else "haiku"
-        return seite(request, "_karte.html", lauf=z, frage=nach_id[frage_id]["frage"], modell=modell,
-                     variante=z["variante"], titel=f"{l.name} · run {wdh}", gespeichert=True,
-                     erwartet=galerie.erwartet(nach_id[frage_id], z["variante"]), richtig=z["richtig"])
+        return seite(request, "_karte.html", **ctx)
 
     @app.get("/health")
     def health():

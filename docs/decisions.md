@@ -246,3 +246,14 @@ Schätzung: Prompt bei Haiku 3.439 Tokens (Glossar allein 2.898, nur Schema 1.73
   Das Image ist lokal noch nicht gebaut (Docker-Daemon lief nicht); die Dateiauswahl des Dockerfiles ist mit einem
   Rauchtest in einem leeren Verzeichnis geprüft.
 - Entwicklung und Screenshots: 7 echte Fragen, 0,10 USD (Budget 0,50).
+
+## 2026-09-30: Branch (d2), Nachtrag vor dem PR
+
+- Annahmen heißen in der Karte „Assumptions (as stated by the model)“.
+- Code-Prüfung der Annahmen (`app/annahmen.py`): sechs Regeln mit festen SQL-Mustern, Badge „✓ verified in SQL“ oder
+  „⚠ not found in SQL“, sonst keins. Lieber zu vorsichtig: zwei Fehlalarme auf richtigen Antworten sind in Kauf
+  genommen. Alle vier Fehlkarten aus docs/ANTWORTEN.md zeigen ⚠ (Test).
+- Deckel (Julian): Sonnet-Reserve 0,05 USD statt 0,15; dazu harte Obergrenze 0,05 USD je Frage im Harness
+  (`max_kosten_usd`, nur in der App; Messläufe unverändert). Abbruch vor dem Aufruf, der die Grenze voraussichtlich
+  überschreitet, mit freundlicher Meldung. Sitzung bleibt 0,25 USD, also mindestens fünf Fragen je Sitzung.
+- Galerie-Karten sind per `?lauf=…&frage=…&wdh=…` direkt verlinkbar (ohne API-Kosten).

@@ -83,6 +83,12 @@ button { font: inherit; cursor: pointer; }
   background: var(--akzent-hell); color: var(--akzent); cursor: help; }
 .andere { background: var(--andere); border: 1px solid var(--andere-rand); border-radius: 8px; padding: 10px 12px; }
 .andere-zahl { white-space: nowrap; }
+.annahmen li { margin-bottom: 4px; }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 0 7px; border-radius: 999px; margin-left: 4px;
+  white-space: nowrap; cursor: help; }
+.badge.ok { color: var(--gut); border: 1px solid var(--gut); }
+.badge.warn { color: #9a6700; background: var(--andere); border: 1px solid var(--andere-rand); }
+@media (prefers-color-scheme: dark) { .badge.warn { color: #e3b341; } }
 details summary { cursor: pointer; color: var(--leise); font-size: 14px; }
 pre { background: var(--code); padding: 12px; border-radius: 8px; overflow-x: auto; white-space: pre; }
 .zeilen { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }

@@ -22,6 +22,7 @@
       <table class="zeilen offen">{% for r in z %}<tr>{% for c in r %}<td>{{ c|zahl }}</td>{% endfor %}</tr>{% endfor %}</table>
       {% endif %}
       {% if a.zeilen is none %}<p class="hinweis">The answer SQL failed ({{ lauf.fehler }}).</p>{% endif %}
+      {% if lauf.fehler and lauf.fehler.startswith("Kostengrenze") %}<p class="hinweis">This question was stopped at the cost limit of $0.05 per question. Try a narrower question.</p>{% endif %}
     {% elif a.art == "rueckfrage" %}
       <p class="etikett">Clarifying question</p>
       <p class="satz">{{ a.text }}</p>
@@ -29,6 +30,8 @@
     {% elif a.art == "keine_daten" %}
       <p class="etikett">No data for this</p>
       <p class="satz">{{ a.text }}</p>
+    {% elif lauf.fehler and lauf.fehler.startswith("Kostengrenze") %}
+      <p class="hinweis">This question was stopped at the cost limit of $0.05 per question before the model answered. Try a narrower question.</p>
     {% else %}
       <p class="hinweis">No answer ({{ lauf.fehler }}).</p>
     {% endif %}
@@ -39,9 +42,12 @@
     </section>
     {% endif %}
     {% if k.annahmen %}
-    <section class="teil"><h3>Assumptions</h3>
-      <ul>{% for x in k.annahmen %}<li>{{ x }}</li>{% endfor %}</ul>
-      <p class="leise klein">Assumptions state what the model intended. Check them against the SQL below.</p>
+    <section class="teil"><h3>Assumptions <span class="klein">(as stated by the model)</span></h3>
+      <ul class="annahmen">{% for x in k.annahmen %}{% set status, grund = pruefe(x, a.sql) %}
+        <li>{{ x }}{% if status == "ok" %} <span class="badge ok" title="The SQL contains the pattern for this rule. This does not prove the number is right.">✓ verified in SQL</span>
+          {%- elif status == "warn" %} <span class="badge warn" title="{{ grund }}">⚠ not found in SQL</span>{% endif %}</li>
+      {% endfor %}</ul>
+      <p class="leise klein">Badges come from simple code checks for known glossary rules (one invoice counted once, store payout, refunds deducted, customer time zone, cancellation vs. end, stated period). No badge: no rule known for this assumption.</p>
     </section>
     {% endif %}
     {% if k.andere_deutung %}

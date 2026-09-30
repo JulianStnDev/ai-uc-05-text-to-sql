@@ -119,8 +119,8 @@ def test_monatsdeckel_fuer_alle_sitzungen(client, tmp_path):
 
 def test_parallele_reservierung_ueberschreitet_den_deckel_nicht(tmp_path):
     buch = Kostenbuch(0.25, 3.0, pfad=tmp_path / "k.sqlite")
-    assert buch.reservieren("s", "sonnet") and not buch.reservieren("s", "sonnet")  # 0,15 + 0,15 > 0,25
-    assert buch.reservieren("s", "haiku")                                             # 0,15 + 0,05 ≤ 0,25
+    assert all(buch.reservieren("s", m) for m in ("sonnet", "haiku", "sonnet", "haiku", "sonnet"))  # 5 × 0,05 = 0,25
+    assert not buch.reservieren("s", "haiku")                                                         # die sechste nicht
 
 
 def test_fehler_zeigt_keine_verbindungsdaten(client, tmp_path):
@@ -150,3 +150,20 @@ def test_galerie_zeigt_gemessene_laeufe_ohne_api(client):
     assert "Expected:" in k and "1224.34" in k and "no API cost" in k
     assert c.get("/gallery/gibtsnicht/E05/1").status_code == 404
     assert fake.aufrufe == []
+
+
+def test_kostengrenze_meldung(client):
+    abbruch = lauf()
+    abbruch["antwort"] = {"art": None, "text": None, "sql": None, "zeilen": None}
+    abbruch["fehler"] = "Kostengrenze je Frage erreicht (0.0400 von 0.05 USD)"
+    c, _ = client(abbruch)
+    assert "cost limit of $0.05 per question" in c.post("/antwort", data={"frage": "a"}).text
+
+
+def test_annahmen_mit_badges_und_ehrlicher_beschriftung(client):
+    c, _ = client()
+    t = c.get("/gallery").text
+    lauf_name = next(s.split("/")[0] for s in t.split('hx-get="/gallery/')[1:] if "karte" in s.split("/")[0])
+    k = c.get(f"/gallery?lauf={lauf_name}&frage=E05&wdh=1").text
+    assert "Assumptions <span class=\"klein\">(as stated by the model)</span>" in k
+    assert "⚠ not found in SQL" in k and "✓ verified in SQL" in k

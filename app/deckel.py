@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Obergrenze je Frage, wie im Messlauf (scripts/baseline.py).
-RESERVE_USD = {"haiku": 0.05, "sonnet": 0.15}
+# Reserve je Frage: die harte Kostengrenze je Frage, die der Harness in der App durchsetzt (docs/decisions.md).
+RESERVE_USD = {"haiku": 0.05, "sonnet": 0.05}  # = harte Obergrenze je Frage im Harness (app/dienst.py)
 
 TABELLE = """CREATE TABLE IF NOT EXISTS kosten (
     buchung TEXT PRIMARY KEY, zeit TEXT NOT NULL, monat TEXT NOT NULL, sitzung TEXT NOT NULL,

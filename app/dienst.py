@@ -15,6 +15,7 @@ from copilot import beantworten, verbinden  # noqa: E402
 
 ROLLE = "analyst_ro"
 MODELLE = {"haiku": "Haiku 4.5", "sonnet": "Sonnet 5.5"}
+MAX_KOSTEN_JE_FRAGE_USD = 0.05  # harte Obergrenze im Harness, gleich der Reserve im Kostenbuch (app/deckel.py)
 VARIANTEN = {"schema": "schema only", "glossar": "+ glossary"}
 
 
@@ -36,7 +37,8 @@ class Copilot:
     def __call__(self, frage: str, modell: str, variante: str) -> dict:
         with verbinden(self._url) as conn:
             self._rolle_pruefen(conn)
-            return beantworten(self._client, conn, frage, modell, variante, format="karte")
+            return beantworten(self._client, conn, frage, modell, variante, format="karte",
+                               max_kosten_usd=MAX_KOSTEN_JE_FRAGE_USD)
 
 
 def glossar_begriffe() -> dict[str, str]:

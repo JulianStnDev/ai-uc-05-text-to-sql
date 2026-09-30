@@ -131,7 +131,8 @@ def kosten_usd(modell: str, usage) -> float:
 
 
 def beantworten(client, conn, frage: str, modell: str, variante: str = "schema", *, format: str = "kurz",
-                zusatz: str | None = None, thinking_anzeigen: bool = False, mitschnitt: list | None = None) -> dict:
+                zusatz: str | None = None, thinking_anzeigen: bool = False, mitschnitt: list | None = None,
+                max_kosten_usd: float | None = None) -> dict:
     """Ein Durchlauf für eine Frage. Gibt Antwort, Protokoll, Tokens, Kosten und Dauer zurück.
 
     Nur für Experimente (docs/ANATOMIE.md), in Messläufen nie gesetzt:
@@ -141,7 +142,9 @@ def beantworten(client, conn, frage: str, modell: str, variante: str = "schema",
     mitschnitt: Liste, an die je Aufruf der rohe Request und die rohe Response als JSON-fähiges dict angehängt werden.
 
     format: "kurz" (Messläufe b und c, unverändert) oder "karte" (Branch d: strukturierte Felder; die Zahl zur anderen
-        Deutung rechnet der Harness selbst aus andere_deutung_sql, nie aus dem Text des Modells)."""
+        Deutung rechnet der Harness selbst aus andere_deutung_sql, nie aus dem Text des Modells).
+    max_kosten_usd: harte Obergrenze je Frage (App: 0,05 USD; Messläufe: keine). Abbruch vor dem nächsten Aufruf, wenn
+        er die Grenze voraussichtlich überschreitet (Schätzung: Kosten des letzten Aufrufs, jeder Aufruf ist größer)."""
     if format not in ("kurz", "karte"):
         raise ValueError(f"Unbekanntes Format: {format!r}")
     m = MODELLE[modell]
@@ -156,6 +159,11 @@ def beantworten(client, conn, frage: str, modell: str, variante: str = "schema",
     sql_protokoll, aufrufe, erinnert, antwort, fehler = [], [], False, None, None
     start = time.perf_counter()
     for _ in range(MAX_AUFRUFE):
+        if max_kosten_usd is not None and aufrufe:
+            bisher = sum(a["kosten_usd"] for a in aufrufe)
+            if bisher + aufrufe[-1]["kosten_usd"] > max_kosten_usd:
+                fehler = f"Kostengrenze je Frage erreicht ({bisher:.4f} von {max_kosten_usd:.2f} USD)"
+                break
         r = client.messages.create(**params, messages=messages)
         if mitschnitt is not None:
             mitschnitt.append({"request": json.loads(json.dumps({**params, "messages": messages}, default=_block)),

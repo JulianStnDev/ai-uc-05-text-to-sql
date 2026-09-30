@@ -24,6 +24,10 @@
       </tbody>
     </table>
   </div>
-  <aside id="galerie-karte" aria-live="polite"><p class="leise">Pick a run on the left.</p></aside>
+  <aside id="galerie-karte" aria-live="polite">
+    {% if karte %}{% with lauf=karte.lauf, frage=karte.frage, modell=karte.modell, variante=karte.variante, titel=karte.titel,
+                          gespeichert=True, erwartet=karte.erwartet, richtig=karte.richtig %}{% include "_karte.html" %}{% endwith %}
+    {% else %}<p class="leise">Pick a run on the left.</p>{% endif %}
+  </aside>
 </div>
 {% endblock %}
