@@ -1,0 +1,4 @@
+<span id="budget" class="budget" {% if oob %}hx-swap-oob="true"{% endif %}
+      title="Cost cap: ${{ '%.2f'|format(stand.deckel_sitzung) }} per session, ${{ '%.2f'|format(stand.deckel_monat) }} per month for the whole app">
+  ${{ '%.2f'|format(stand.rest_sitzung) }} of ${{ '%.2f'|format(stand.deckel_sitzung) }} left
+</span>

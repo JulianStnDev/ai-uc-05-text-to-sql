@@ -28,6 +28,7 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 - `docs/DATA_NOTES.md`: the traps, for humans only, never part of a prompt.
 - `docs/GLOSSAR.md`: business definitions (draft), only given to the model in branch (c).
 - `scripts/copilot.py`: the copilot. Two strict tools, `sql_ausfuehren` (runs SQL as `analyst_ro`, at most 5 per question) and `antworten` (result with SQL, clarifying question, or "no data"). The harness re-runs the answer SQL; that result is graded, not the prose.
+- `app/`: the web app (FastAPI + Jinja2 + htmx), see below.
 - `scripts/baseline.py`: measurement run with a hard budget, shows only the estimate without `--ja`. `scripts/auswerten.py`: accuracy per question type, cost per 1000 requests, p50/p95 latency.
 
 ## Data
@@ -107,6 +108,28 @@ Measured on 81 runs per model and variant:
 - Pilot and full run of branch (b) together cost 1.48 USD; branch (c) including the extra variant 2.31 USD; the run anatomy 0.08 USD.
 - Branch (a) made no API calls. Neon runs in the free tier.
 
+## The App (local)
+A small web app on top of the copilot, same stack as UC7: FastAPI, Jinja2 and htmx (vendored, no CDN). The interface is in English, questions and answers are in German.
+
+- **Ask:** type a question or click an example. The answer card shows the result large, the glossary definitions used (hover for the definition), the assumptions, another plausible reading with its number, the SQL with its result (collapsible) and the cost of the question.
+- **Compare:** the same question side by side, either *schema only vs. + glossary* or *Haiku vs. Sonnet*. Both calls run in parallel.
+- **Gallery:** every recorded run of the full measurements as clickable examples, graded with the frozen rules, without API cost (precursor of the replay for going online).
+- **Cost cap:** $0.25 per session (signed cookie), $3.00 per month for the whole app and a hard $0.05 per question. Each question first books a reserve of $0.05 and then settles the real cost, so two parallel calls cannot overrun the cap. The ledger lives in SQLite locally and in Postgres on Cloud Run, never in process memory, and never in the analytics database, where the app has read-only rights.
+- **Read-only:** SQL runs only as `analyst_ro`; the app checks `current_user` on first access and refuses any other role. Error messages never show connection details.
+- **Ready for Cloud Run:** `Dockerfile` (python:3.13-slim, non-root user, port from `$PORT`), `/health`, secrets only from the environment, `.gcloudignore` excludes `.env`.
+
+What the answer card makes visible, following [docs/ANTWORTEN.md](docs/ANTWORTEN.md): numbers come only from executed SQL; the other reading's number is computed by the harness; numbers in the text of a clarifying question get a note that nobody executed them. Assumptions are labelled *as stated by the model*, and a simple code check marks each assumption about a known glossary rule (one payment per invoice, store payout, refunds deducted, customer time zone, cancellation vs. end, stated period) with **✓ verified in SQL** or **⚠ not found in SQL**; all four wrong cards from ANTWORTEN.md get ⚠. A ✓ only means the pattern is in the SQL, not that the number is right. Each question is capped at $0.05 in the harness (stopped before the next call would exceed it).
+
+![Gallery card E05, run 1: graded correct, but the assumption "count each invoice once" is marked "not found in SQL" — the number is right only because May had no duplicate charge](docs/img/app_badges_e05.png)
+
+*E05, run 1 from the answer-card run: graded correct, yet ⚠ on "each invoice once" – the SQL sums all payments per invoice and is right only because May had no duplicate charge. The screenshots below were taken before the badge check was added.*
+
+| Answer card (E05, Haiku + glossary) | Clarifying question (M02) |
+|---|---|
+| ![Answer card: revenue May 2026, 1,224.34, with definitions used and assumptions](docs/img/app_antwortkarte.png) | ![Clarifying question for "How many customers do we have?", with a note that the numbers in the text were not executed](docs/img/app_rueckfrage_m02.png) |
+| **Compare schema only vs. + glossary (E05)** | **Compare Haiku vs. Sonnet (U01)** |
+| ![Side by side: schema only gives 1,344.34 without refunds, with glossary 1,224.34](docs/img/app_vergleich_glossar_e05.png) | ![Side by side: Haiku uses the billing channel as a proxy for the marketing channel and says so; Sonnet answers "no data"](docs/img/app_vergleich_modelle_u01.png) |
+
 ## Running Locally
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -117,6 +140,8 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # once: database, role
 .venv/bin/python scripts/baseline.py --modell haiku --budget 0.50        # estimate only; --ja runs it (costs money)
 .venv/bin/python scripts/auswerten.py evals/laeufe/*.jsonl                # evaluation (no API)
 .venv/bin/python scripts/grafik.py                                        # chart (no API)
+.venv/bin/pip install -r requirements-dev.txt                             # httpx, only for the app tests
+.venv/bin/uvicorn --factory app.main:create_app --reload                  # the app on http://localhost:8000 (costs money per question, capped)
 ```
 
 ## Learnings

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{% block titel %}FocusFlow Analytics Copilot{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header class="kopf">
+    <div class="marke">FocusFlow <span>Analytics Copilot</span></div>
+    <nav>
+      {% set pfad = request.url.path %}
+      <a href="/" {% if pfad == "/" %}aria-current="page"{% endif %}>Ask</a>
+      <a href="/compare" {% if pfad.startswith("/compare") %}aria-current="page"{% endif %}>Compare</a>
+      <a href="/gallery" {% if pfad.startswith("/gallery") %}aria-current="page"{% endif %}>Gallery</a>
+    </nav>
+    {% include "_budget.html" %}
+  </header>
+  <main>
+    {% block inhalt %}{% endblock %}
+  </main>
+  <footer class="fuss">
+    Fictional app, synthetic data. SQL runs read-only as <code>analyst_ro</code>.
+    Questions and answers are in German.
+  </footer>
+</body>
+</html>

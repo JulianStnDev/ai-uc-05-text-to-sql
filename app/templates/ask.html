@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block inhalt %}
+<form id="frage-form" class="frage" hx-post="/antwort" hx-target="#antwort" hx-indicator="#laden">
+  <label for="frage">Ask a question about FocusFlow <span class="leise">(in German)</span></label>
+  <div class="zeile">
+    <input id="frage" name="frage" maxlength="300" required value="{{ q }}"
+           placeholder="z. B. Wie hoch war der Umsatz im Mai 2026?" autocomplete="off">
+    <button type="submit">Ask</button>
+  </div>
+  <div class="optionen">
+    <label>Model
+      <select name="modell">
+        {% for k, n in MODELLE.items() %}<option value="{{ k }}" {% if k == m %}selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Context
+      <select name="variante">
+        {% for k, n in VARIANTEN.items() %}<option value="{{ k }}" {% if k == v %}selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+</form>
+
+<div class="beispiele" aria-label="Example questions">
+  <span class="leise">Try:</span>
+  {% for b in beispiele %}
+  <button type="button" class="chip" title="{{ b.id }} · {{ b.typ }}"
+          hx-post="/antwort" hx-target="#antwort" hx-include="#frage-form" hx-indicator="#laden"
+          hx-vals='{{ {"frage": b.frage}|tojson }}'
+          onclick="document.getElementById('frage').value = this.dataset.frage" data-frage="{{ b.frage }}">{{ b.frage }}</button>
+  {% endfor %}
+</div>
+
+<div id="laden" class="laden" aria-live="polite">Thinking and querying the database …</div>
+<section id="antwort" aria-live="polite">
+  {% if q %}<div hx-post="/antwort" hx-trigger="load" hx-include="#frage-form" hx-target="#antwort" hx-indicator="#laden"></div>{% endif %}
+</section>
+{% endblock %}

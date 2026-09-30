@@ -1,0 +1,80 @@
+{#- Antwortkarte. Kontext: lauf (Protokoll wie scripts/copilot.beantworten), frage, modell, variante, titel,
+    optional hinweis (Deckel, Fehler), gespeichert/erwartet/richtig (Galerie), oob (Budget mitschicken). -#}
+{% if oob %}{% include "_budget.html" %}{% endif %}
+<article class="karte {% if lauf %}art-{{ lauf.antwort.art or 'fehler' }}{% endif %}">
+  <header class="karte-kopf">
+    <span>{{ titel or (MODELLE.get(modell, modell) ~ " · " ~ VARIANTEN.get(variante, variante)) }}</span>
+    {% if gespeichert %}<span class="urteil {{ 'gut' if richtig else 'schlecht' }}">{{ '✓ correct' if richtig else '✗ wrong' }}</span>{% endif %}
+  </header>
+  {% if frage %}<p class="frage-text">„{{ frage }}“</p>{% endif %}
+
+  {% if hinweis %}
+    <p class="hinweis">{{ hinweis }}</p>
+  {% elif lauf %}
+    {% set a = lauf.antwort %}
+    {% set k = a.karte or {} %}
+    {% if a.art == "ergebnis" %}
+      {% set z = a.zeilen or [] %}
+      {#- Eine Ergebniszeile: der letzte Wert groß (meist die Summe, etwa Web + Store − Erstattungen). -#}
+      {% if z|length == 1 %}<p class="gross">{{ z[0][-1]|zahl }}</p>{% endif %}
+      <p class="satz">{{ a.text }}</p>
+      {% if 1 < z|length <= 10 %}
+      <table class="zeilen offen">{% for r in z %}<tr>{% for c in r %}<td>{{ c|zahl }}</td>{% endfor %}</tr>{% endfor %}</table>
+      {% endif %}
+      {% if a.zeilen is none %}<p class="hinweis">The answer SQL failed ({{ lauf.fehler }}).</p>{% endif %}
+      {% if lauf.fehler and lauf.fehler.startswith("Kostengrenze") %}<p class="hinweis">This question was stopped at the cost limit of $0.05 per question. Try a narrower question.</p>{% endif %}
+    {% elif a.art == "rueckfrage" %}
+      <p class="etikett">Clarifying question</p>
+      <p class="satz">{{ a.text }}</p>
+      {% if a.text|hat_zahl %}<p class="leise klein">Numbers in this question come from the model's text, not from executed SQL.</p>{% endif %}
+    {% elif a.art == "keine_daten" %}
+      <p class="etikett">No data for this</p>
+      <p class="satz">{{ a.text }}</p>
+    {% elif lauf.fehler and lauf.fehler.startswith("Kostengrenze") %}
+      <p class="hinweis">This question was stopped at the cost limit of $0.05 per question before the model answered. Try a narrower question.</p>
+    {% else %}
+      <p class="hinweis">No answer ({{ lauf.fehler }}).</p>
+    {% endif %}
+
+    {% if k.begriffe %}
+    <section class="teil"><h3>Definitions used</h3>
+      <p>{% for b in k.begriffe %}<span class="begriff" tabindex="0" title="{{ definition(b) or 'Not a glossary term' }}">{{ b }}</span>{% endfor %}</p>
+    </section>
+    {% endif %}
+    {% if k.annahmen %}
+    <section class="teil"><h3>Assumptions <span class="klein">(as stated by the model)</span></h3>
+      <ul class="annahmen">{% for x in k.annahmen %}{% set status, grund = pruefe(x, a.sql) %}
+        <li>{{ x }}{% if status == "ok" %} <span class="badge ok" title="The SQL contains the pattern for this rule. This does not prove the number is right.">✓ verified in SQL</span>
+          {%- elif status == "warn" %} <span class="badge warn" title="{{ grund }}">⚠ not found in SQL</span>{% endif %}</li>
+      {% endfor %}</ul>
+      <p class="leise klein">Badges come from simple code checks for known glossary rules (one invoice counted once, store payout, refunds deducted, customer time zone, cancellation vs. end, stated period). No badge: no rule known for this assumption.</p>
+    </section>
+    {% endif %}
+    {% if k.andere_deutung %}
+    <section class="teil andere"><h3>Other reading</h3>
+      <p>{{ k.andere_deutung }}
+        {% if k.andere_deutung_zeilen %}<strong class="andere-zahl">→ {{ k.andere_deutung_zeilen|kurz }}</strong>
+        {% elif k.andere_deutung_sql %}<span class="leise">(its SQL failed)</span>{% else %}<span class="leise">(no SQL given)</span>{% endif %}
+      </p>
+    </section>
+    {% endif %}
+
+    {% if a.sql %}
+    <details class="teil"><summary>SQL{% if a.zeilen %} and result ({{ a.zeilen|length }} row{{ 's' if a.zeilen|length != 1 }}){% endif %}</summary>
+      <pre><code>{{ a.sql|trim }}</code></pre>
+      {% if a.zeilen %}
+      <table class="zeilen">{% for r in a.zeilen[:10] %}<tr>{% for c in r %}<td>{{ c|zahl }}</td>{% endfor %}</tr>{% endfor %}</table>
+      {% endif %}
+    </details>
+    {% endif %}
+
+    {% if gespeichert %}<p class="erwartet"><span class="leise">Expected:</span> {{ erwartet }}</p>{% endif %}
+    <footer class="karte-fuss">
+      {{ lauf.aufrufe|length }} call{{ 's' if lauf.aufrufe|length != 1 }} ·
+      {{ lauf.aufrufe|sum(attribute='input') + lauf.aufrufe|sum(attribute='cache_lesen') + lauf.aufrufe|sum(attribute='cache_schreiben') }} in /
+      {{ lauf.aufrufe|sum(attribute='output') }} out tokens ·
+      ${{ '%.4f'|format(lauf.kosten_usd) }} · {{ '%.1f'|format(lauf.dauer_s) }} s
+      {% if gespeichert %}· recorded on 30.09.2026, no API cost{% endif %}
+    </footer>
+  {% endif %}
+</article>

@@ -295,3 +295,14 @@ def test_format_karte_ohne_andere_deutung_und_rueckfrage(ro):
     assert baseline.bewertung(FRAGEN["M02"], lauf, "glossar")["richtig"]
     with pytest.raises(ValueError):
         beantworten(FakeClient([]), ro, "x", "haiku", format="lang")
+
+
+def test_harte_kostengrenze_je_frage(ro):
+    teuer = usage(ein=20000, aus=2000)   # 0,03 USD je Aufruf mit Haiku
+    c = FakeClient([antwort(werkzeug("sql_ausfuehren", sql="SELECT 1"), u=teuer)] * 3
+                   + [antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))])
+    lauf = beantworten(c, ro, "x", "haiku", max_kosten_usd=0.05)
+    assert len(lauf["aufrufe"]) == 1 and lauf["fehler"].startswith("Kostengrenze") and lauf["kosten_usd"] <= 0.05
+    c = FakeClient([antwort(werkzeug("sql_ausfuehren", sql="SELECT 1"), u=teuer),
+                    antwort(werkzeug("antworten", art="keine_daten", text="-", sql=""))])
+    assert beantworten(c, ro, "x", "haiku")["fehler"] is None   # ohne Grenze (Messläufe) unverändert

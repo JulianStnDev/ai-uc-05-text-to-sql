@@ -45,6 +45,7 @@ was das Modell sieht.
 
 ## Erlaubte Libraries
 - anthropic, psycopg, python-dotenv, pytest
+- Seit 30.09.2026 (Branch d, Julians Freigabe) für die Web-App: fastapi, uvicorn[standard], jinja2, python-multipart; httpx nur für Tests. htmx liegt als Datei im Repo (kein CDN).
 - Direkt gegen das SDK, kein LangChain/LlamaIndex, kein fertiges Text-to-SQL-Framework
 
 ## Stil

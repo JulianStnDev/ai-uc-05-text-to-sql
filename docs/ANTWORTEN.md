@@ -110,3 +110,25 @@ korrekt auf, setzt sie im SQL aber falsch um. **Die Karte zeigt, was das Modell 
 4. **Das Feld „andere Deutung“ kann Rückfragen verdrängen.** Das ist hier einmal passiert (M02 W3). Die M-Quote bleibt
    insgesamt bei 14/18, der Effekt ist im Rauschen, aber das Muster ist echt: Eine Zahl mit Alternative sieht hilfreich
    aus und ist doch geraten.
+
+## Nachtrag: Code-Prüfung der Annahmen (Branch d2, 30.09.2026)
+
+Aus Punkt 3 oben ist doch eine einfache Prüfung geworden (`app/annahmen.py`, Tests in `tests/test_annahmen.py`). Sie
+kennt sechs Regeln: eine Zahlung je Rechnung, Store-Umsatz über `proceeds_usd`, Erstattungen abgezogen (oder bewusst
+nicht) und ohne `duplicate_charge`, Zeitzone des Kunden, Kündigung = `cancelled_at` bzw. Abo-Ende = `ends_at`, genannter
+Zeitraum. Behauptet eine Annahme eine dieser Regeln, sucht die Prüfung ein festes Muster im SQL (Kommentare und
+String-Literale vorher entfernt) und zeigt **✓ verified in SQL** oder **⚠ not found in SQL**, sonst kein Badge. Den
+Zeitraum prüft sie nur, wenn das SQL überhaupt Datumswerte enthält.
+
+Über alle 81 Karten des Regressionstests: 71 ✓, 11 ⚠, 129 Annahmen ohne Badge.
+
+| ⚠ auf | Anzahl | Karten |
+|---|---|---|
+| falscher Antwort (die vier Fehlkarten) | 4 | F01 W1, F01 W3, F02 W2, M06 W1 |
+| richtiger Antwort, zu Recht | 5 | E05 W1 (Glück); E01 W2, E08 W1, E10 W1, F03 W1 (Karte nennt „bis 30.“, SQL rechnet bis Monatsende) |
+| richtiger Antwort, aus Vorsicht | 2 | E05 W2 (`MIN(payment_id)` je Rechnung), F02 W1 (`MAX(amount_usd)` je Rechnung) |
+
+Die zwei Fehlalarme sind gewollt: Beide Muster ergeben hier dieselbe Zahl, sind aber nicht „die erste erfolgreiche
+Zahlung“. Ein ✓ ist dagegen nie über einer der vier Fehlkarten erschienen. Grenzen: Die Prüfung sieht nur Muster, keine
+Semantik. Ein ✓ heißt, dass das SQL die Regel an irgendeiner Stelle umsetzt, nicht, dass die Zahl stimmt (M06 W2 und W3
+bekommen ✓, weil Karte und SQL übereinstimmend beim 31.08. beginnen; beide sind trotzdem falsch).
