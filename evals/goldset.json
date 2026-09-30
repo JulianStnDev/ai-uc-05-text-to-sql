@@ -1,0 +1,978 @@
+{
+ "fragen": [
+  {
+   "id": "E01",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Wie viele Kunden haben sich im März 2026 registriert?",
+   "sql": "SELECT count(*) AS neukunden FROM customers WHERE signup_at >= '2026-03-01' AND signup_at < '2026-04-01'",
+   "ergebnis": {
+    "spalten": [
+     "neukunden"
+    ],
+    "zeilen": [
+     [
+      54
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E02",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "In welchen fünf Ländern haben wir die meisten Kunden, und wie viele sind es jeweils?",
+   "sql": "SELECT country, count(*) AS kunden FROM customers GROUP BY country ORDER BY kunden DESC, country LIMIT 5",
+   "reihenfolge": true,
+   "ergebnis": {
+    "spalten": [
+     "country",
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      "DE",
+      189
+     ],
+     [
+      "US",
+      121
+     ],
+     [
+      "GB",
+      52
+     ],
+     [
+      "AU",
+      45
+     ],
+     [
+      "JP",
+      38
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E03",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Wie viele Pro-Abos wurden im ersten Quartal 2026 abgeschlossen, aufgeteilt nach Kanal?",
+   "sql": "SELECT channel, count(*) AS neue_abos FROM subscriptions WHERE started_at >= '2026-01-01' AND started_at < '2026-04-01' GROUP BY channel ORDER BY channel",
+   "ergebnis": {
+    "spalten": [
+     "channel",
+     "neue_abos"
+    ],
+    "zeilen": [
+     [
+      "apple",
+      15
+     ],
+     [
+      "google",
+      9
+     ],
+     [
+      "web",
+      34
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E04",
+   "typ": "eindeutig",
+   "fallen": [
+    "irrefuehrende_spalte"
+   ],
+   "frage": "Wie viele Kunden hatten am 30. September 2026 ein laufendes Jahresabo?",
+   "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE plan = 'pro_annual' AND started_at < '2026-10-01' AND (ends_at IS NULL OR ends_at >= '2026-10-01')",
+   "ergebnis": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      98
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E05",
+   "typ": "eindeutig",
+   "fallen": [
+    "doppelabbuchung",
+    "store",
+    "erstattung"
+   ],
+   "frage": "Wie hoch war der Umsatz im Mai 2026?",
+   "sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nerstattet AS (\n    SELECT refunded_at AS zeit, -amount_usd AS betrag FROM refunds WHERE reason <> 'duplicate_charge'),\nstore AS (SELECT purchased_at AS zeit, proceeds_usd AS betrag FROM store_transactions),\numsatz AS (SELECT * FROM web UNION ALL SELECT * FROM erstattet UNION ALL SELECT * FROM store)\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-05-01' AND zeit < '2026-06-01'",
+   "ergebnis": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "1224.34"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E06",
+   "typ": "eindeutig",
+   "fallen": [
+    "doppelabbuchung",
+    "erstattung"
+   ],
+   "frage": "Wie viel Geld haben wir im Gesamtzeitraum an Kunden erstattet, ohne die Erstattungen von Doppelabbuchungen?",
+   "sql": "SELECT count(*) AS erstattungen, sum(amount_usd) AS summe_usd FROM refunds WHERE reason <> 'duplicate_charge'",
+   "ergebnis": {
+    "spalten": [
+     "erstattungen",
+     "summe_usd"
+    ],
+    "zeilen": [
+     [
+      25,
+      "604.94"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E07",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Welcher Kündigungsgrund wurde am häufigsten angegeben, und wie oft?",
+   "sql": "SELECT reason, count(*) AS anzahl FROM cancellations GROUP BY reason ORDER BY anzahl DESC, reason LIMIT 1",
+   "ergebnis": {
+    "spalten": [
+     "reason",
+     "anzahl"
+    ],
+    "zeilen": [
+     [
+      "price_increase",
+      49
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E08",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Wie viele Kunden haben sich im Juli 2026 mindestens einmal eingeloggt?",
+   "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins WHERE logged_in_at >= '2026-07-01' AND logged_in_at < '2026-08-01'",
+   "ergebnis": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      316
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E10",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Über welche Plattform kamen im August 2026 die meisten Logins, und wie viele waren es?",
+   "sql": "SELECT platform, count(*) AS logins FROM logins WHERE logged_in_at >= '2026-08-01' AND logged_in_at < '2026-09-01' GROUP BY platform ORDER BY logins DESC LIMIT 1",
+   "ergebnis": {
+    "spalten": [
+     "platform",
+     "logins"
+    ],
+    "zeilen": [
+     [
+      "ios",
+      2239
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E11",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Wie viele Web-Zahlungen sind im Gesamtzeitraum fehlgeschlagen?",
+   "sql": "SELECT count(*) AS fehlgeschlagen FROM payments WHERE status = 'failed'",
+   "ergebnis": {
+    "spalten": [
+     "fehlgeschlagen"
+    ],
+    "zeilen": [
+     [
+      17
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E12",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Wie viele Tage vergehen im Median zwischen Registrierung und erstem Pro-Abo?",
+   "sql": "WITH erstes AS (SELECT customer_id, min(started_at) AS beginn FROM subscriptions GROUP BY customer_id)\nSELECT round((percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM e.beginn - c.signup_at) / 86400))::numeric, 1) AS median_tage FROM erstes e JOIN customers c USING (customer_id)",
+   "ergebnis": {
+    "spalten": [
+     "median_tage"
+    ],
+    "zeilen": [
+     [
+      "7.4"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E13",
+   "typ": "eindeutig",
+   "fallen": [],
+   "frage": "Wie viele Kunden haben mehr als ein Abo abgeschlossen?",
+   "sql": "SELECT count(*) AS kunden FROM (SELECT customer_id FROM subscriptions GROUP BY customer_id HAVING count(*) > 1) x",
+   "ergebnis": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      10
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E14",
+   "typ": "eindeutig",
+   "fallen": [
+    "kuendigung"
+   ],
+   "frage": "Wie viele Abos endeten im September 2026?",
+   "sql": "SELECT count(*) AS beendete_abos FROM subscriptions WHERE ends_at >= '2026-09-01' AND ends_at < '2026-10-01'",
+   "ergebnis": {
+    "spalten": [
+     "beendete_abos"
+    ],
+    "zeilen": [
+     [
+      22
+     ]
+    ]
+   }
+  },
+  {
+   "id": "E15",
+   "typ": "eindeutig",
+   "fallen": [
+    "store"
+   ],
+   "frage": "Wie hoch war der Umsatz aus Käufen im Apple App Store im zweiten Quartal 2026?",
+   "sql": "SELECT sum(proceeds_usd) AS umsatz_usd FROM store_transactions WHERE store = 'apple' AND purchased_at >= '2026-04-01' AND purchased_at < '2026-07-01'",
+   "ergebnis": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "1020.23"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "M01",
+   "typ": "mehrdeutig",
+   "fallen": [
+    "kuendigung"
+   ],
+   "frage": "Wie viele Kunden haben wir im Sommer verloren?",
+   "rueckfrage": "Was heißt „verloren“: gekündigt, Abo beendet oder nicht mehr genutzt? Und ist mit Sommer Juni bis August gemeint?",
+   "deutungen": [
+    {
+     "deutung": "Kunden mit Kündigung (cancelled_at) von Juni bis August 2026",
+     "sql": "SELECT count(DISTINCT s.customer_id) AS kunden FROM cancellations k JOIN subscriptions s USING (subscription_id) WHERE k.cancelled_at >= '2026-06-01' AND k.cancelled_at < '2026-09-01'",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        65
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Kunden, deren Abo von Juni bis August 2026 endete und die am 31.08. kein laufendes Abo hatten",
+     "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions s WHERE ends_at >= '2026-06-01' AND ends_at < '2026-09-01' AND NOT EXISTS (SELECT 1 FROM subscriptions t WHERE t.customer_id = s.customer_id AND t.started_at < '2026-09-01' AND (t.ends_at IS NULL OR t.ends_at >= '2026-09-01'))",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        23
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Kunden mit Login im Mai 2026, aber keinem Login von Juni bis August",
+     "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins l WHERE logged_in_at >= '2026-05-01' AND logged_in_at < '2026-06-01' AND NOT EXISTS (SELECT 1 FROM logins m WHERE m.customer_id = l.customer_id AND m.logged_in_at >= '2026-06-01' AND m.logged_in_at < '2026-09-01')",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        30
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "M02",
+   "typ": "mehrdeutig",
+   "fallen": [
+    "irrefuehrende_spalte"
+   ],
+   "frage": "Wie viele Kunden haben wir?",
+   "rueckfrage": "Welche Kunden meinst du: alle registrierten Konten, zahlende Pro-Kunden oder aktive Kunden? Und zu welchem Stichtag?",
+   "deutungen": [
+    {
+     "deutung": "Alle registrierten Konten",
+     "sql": "SELECT count(*) AS kunden FROM customers",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        600
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Pro-Kunden mit laufendem Abo am 30.09.2026",
+     "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE started_at < '2026-10-01' AND (ends_at IS NULL OR ends_at >= '2026-10-01')",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        201
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Aktive Kunden (Login in den 30 Tagen bis 30.09.2026)",
+     "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        374
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "M03",
+   "typ": "mehrdeutig",
+   "fallen": [
+    "store"
+   ],
+   "frage": "Welcher Kanal ist am besten?",
+   "rueckfrage": "Woran gemessen: am Umsatz, an der Zahl neuer Abos oder daran, wie selten gekündigt wird?",
+   "deutungen": [
+    {
+     "deutung": "Umsatz je Kanal im Gesamtzeitraum",
+     "sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nerstattet AS (\n    SELECT refunded_at AS zeit, -amount_usd AS betrag FROM refunds WHERE reason <> 'duplicate_charge')\nSELECT 'web' AS kanal, (SELECT sum(betrag) FROM web) + (SELECT sum(betrag) FROM erstattet) AS umsatz_usd\nUNION ALL SELECT store, sum(proceeds_usd) FROM store_transactions GROUP BY store ORDER BY umsatz_usd DESC",
+     "ergebnis": {
+      "spalten": [
+       "kanal",
+       "umsatz_usd"
+      ],
+      "zeilen": [
+       [
+        "web",
+        "5018.91"
+       ],
+       [
+        "apple",
+        "3008.59"
+       ],
+       [
+        "google",
+        "1331.74"
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Neue Abos je Kanal im Gesamtzeitraum",
+     "sql": "SELECT channel AS kanal, count(*) AS abos FROM subscriptions GROUP BY channel ORDER BY abos DESC",
+     "ergebnis": {
+      "spalten": [
+       "kanal",
+       "abos"
+      ],
+      "zeilen": [
+       [
+        "web",
+        140
+       ],
+       [
+        "apple",
+        87
+       ],
+       [
+        "google",
+        38
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Anteil gekündigter Abos je Kanal (niedrig ist gut)",
+     "sql": "SELECT s.channel AS kanal, round(100.0 * count(k.cancellation_id) / count(*), 1) AS kuendigungsanteil_prozent FROM subscriptions s LEFT JOIN cancellations k USING (subscription_id) GROUP BY s.channel ORDER BY 2",
+     "ergebnis": {
+      "spalten": [
+       "kanal",
+       "kuendigungsanteil_prozent"
+      ],
+      "zeilen": [
+       [
+        "apple",
+        "28.7"
+       ],
+       [
+        "web",
+        "38.6"
+       ],
+       [
+        "google",
+        "39.5"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "M04",
+   "typ": "mehrdeutig",
+   "fallen": [
+    "kuendigung"
+   ],
+   "frage": "Wie hoch ist unsere Kündigungsquote?",
+   "rueckfrage": "Für welchen Zeitraum und auf welcher Basis: Anteil aller Abos, monatlich (z. B. August 2026) oder je Kunde?",
+   "deutungen": [
+    {
+     "deutung": "Anteil gekündigter Abos an allen Abos im Gesamtzeitraum",
+     "sql": "SELECT round(100.0 * (SELECT count(*) FROM cancellations) / (SELECT count(*) FROM subscriptions), 1) AS prozent",
+     "ergebnis": {
+      "spalten": [
+       "prozent"
+      ],
+      "zeilen": [
+       [
+        "35.5"
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Monatlich, August 2026: Kündigungen im August / am 01.08. laufende Abos",
+     "sql": "SELECT round(100.0 * (SELECT count(*) FROM cancellations WHERE cancelled_at >= '2026-08-01' AND cancelled_at < '2026-09-01')\n  / (SELECT count(*) FROM subscriptions WHERE started_at < '2026-08-01' AND (ends_at IS NULL OR ends_at >= '2026-08-01')), 1) AS prozent",
+     "ergebnis": {
+      "spalten": [
+       "prozent"
+      ],
+      "zeilen": [
+       [
+        "31.5"
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Je Kunde: Kunden mit mindestens einer Kündigung / Kunden mit mindestens einem Abo",
+     "sql": "SELECT round(100.0 * count(DISTINCT s.customer_id) FILTER (WHERE k.cancellation_id IS NOT NULL) / count(DISTINCT s.customer_id), 1) AS prozent FROM subscriptions s LEFT JOIN cancellations k USING (subscription_id)",
+     "ergebnis": {
+      "spalten": [
+       "prozent"
+      ],
+      "zeilen": [
+       [
+        "35.4"
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "M05",
+   "typ": "mehrdeutig",
+   "fallen": [],
+   "frage": "Wie viele Kunden nutzen FocusFlow regelmäßig?",
+   "rueckfrage": "Was heißt regelmäßig und in welchem Zeitraum: an mindestens 10 Tagen im Monat, jede Woche, oder aktiv laut Definition (Login in den letzten 30 Tagen)?",
+   "deutungen": [
+    {
+     "deutung": "Login an mindestens 10 verschiedenen Tagen im September 2026",
+     "sql": "SELECT count(*) AS kunden FROM (SELECT customer_id FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01' GROUP BY customer_id HAVING count(DISTINCT logged_in_at::date) >= 10) x",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        217
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Login in jeder der vier Wochen 01.–28.09.2026",
+     "sql": "SELECT count(*) AS kunden FROM (SELECT customer_id FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-09-29' GROUP BY customer_id HAVING count(DISTINCT (extract(day FROM logged_in_at)::int - 1) / 7) = 4) x",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        241
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Aktive Kunden laut Glossar (Login in den 30 Tagen bis 30.09.2026)",
+     "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'",
+     "ergebnis": {
+      "spalten": [
+       "kunden"
+      ],
+      "zeilen": [
+       [
+        374
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "M06",
+   "typ": "mehrdeutig",
+   "fallen": [],
+   "vormals": "E09",
+   "frage": "Wie viele aktive Kunden hatten wir am 30. September 2026?",
+   "rueckfrage": "Was heißt aktiv: eingeloggt in den letzten 30 Tagen, in der letzten Woche, oder mit laufendem Pro-Abo?",
+   "deutungen": [
+    {
+     "deutung": "Login in den 30 Tagen bis 30.09.2026 (Definition laut Glossar)",
+     "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'",
+     "ergebnis": {
+      "spalten": [
+       "aktive_kunden"
+      ],
+      "zeilen": [
+       [
+        374
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Login in den 7 Tagen bis 30.09.2026",
+     "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM logins WHERE logged_in_at >= '2026-09-24' AND logged_in_at < '2026-10-01'",
+     "ergebnis": {
+      "spalten": [
+       "aktive_kunden"
+      ],
+      "zeilen": [
+       [
+        306
+       ]
+      ]
+     }
+    },
+    {
+     "deutung": "Laufendes Pro-Abo am 30.09.2026",
+     "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM subscriptions WHERE started_at < '2026-10-01' AND (ends_at IS NULL OR ends_at >= '2026-10-01')",
+     "ergebnis": {
+      "spalten": [
+       "aktive_kunden"
+      ],
+      "zeilen": [
+       [
+        201
+       ]
+      ]
+     }
+    }
+   ],
+   "mit_glossar": {
+    "typ": "eindeutig",
+    "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'",
+    "ergebnis": {
+     "spalten": [
+      "aktive_kunden"
+     ],
+     "zeilen": [
+      [
+       374
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "F01",
+   "typ": "falle",
+   "fallen": [
+    "doppelabbuchung"
+   ],
+   "frage": "Wie hoch war der Web-Umsatz im September 2026 vor Erstattungen?",
+   "sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at)\nSELECT sum(betrag) AS umsatz_usd FROM web WHERE zeit >= '2026-09-01' AND zeit < '2026-10-01'",
+   "naiv_sql": "SELECT sum(amount_usd) AS umsatz_usd FROM payments WHERE status = 'succeeded' AND paid_at >= '2026-09-01' AND paid_at < '2026-10-01'",
+   "naiv_fehler": "zählt Doppelabbuchungen (zweite Zahlung zur selben Rechnung) als Umsatz",
+   "ergebnis": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "613.46"
+     ]
+    ]
+   },
+   "naiv_ergebnis": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "686.44"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "F02",
+   "typ": "falle",
+   "fallen": [
+    "store"
+   ],
+   "frage": "Wie hoch war der Umsatz im zweiten Quartal 2026 insgesamt?",
+   "sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nerstattet AS (\n    SELECT refunded_at AS zeit, -amount_usd AS betrag FROM refunds WHERE reason <> 'duplicate_charge'),\nstore AS (SELECT purchased_at AS zeit, proceeds_usd AS betrag FROM store_transactions),\numsatz AS (SELECT * FROM web UNION ALL SELECT * FROM erstattet UNION ALL SELECT * FROM store)\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-04-01' AND zeit < '2026-07-01'",
+   "naiv_sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nerstattet AS (\n    SELECT refunded_at AS zeit, -amount_usd AS betrag FROM refunds WHERE reason <> 'duplicate_charge'),\numsatz AS (SELECT * FROM web UNION ALL SELECT * FROM erstattet)\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-04-01' AND zeit < '2026-07-01'",
+   "naiv_fehler": "rechnet nur payments; Apple- und Google-Käufe stehen in store_transactions",
+   "ergebnis": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "3109.63"
+     ]
+    ]
+   },
+   "naiv_ergebnis": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "1592.48"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "F03",
+   "typ": "falle",
+   "fallen": [
+    "kuendigung"
+   ],
+   "frage": "Wie viele Kunden haben im August 2026 gekündigt?",
+   "sql": "SELECT count(DISTINCT s.customer_id) AS kunden FROM cancellations k JOIN subscriptions s USING (subscription_id) WHERE k.cancelled_at >= '2026-08-01' AND k.cancelled_at < '2026-09-01'",
+   "naiv_sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE ends_at >= '2026-08-01' AND ends_at < '2026-09-01'",
+   "naiv_fehler": "nimmt das Abo-Ende statt der Kündigungserklärung; Kündigungen im August enden meist im September",
+   "ergebnis": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      55
+     ]
+    ]
+   },
+   "naiv_ergebnis": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      18
+     ]
+    ]
+   }
+  },
+  {
+   "id": "F04",
+   "typ": "falle",
+   "fallen": [
+    "zeitzone"
+   ],
+   "frage": "Wie viele Logins fanden im Gesamtzeitraum morgens zwischen 6 und 9 Uhr statt?",
+   "sql": "SELECT count(*) AS logins FROM logins l JOIN customers c USING (customer_id) WHERE extract(hour FROM l.logged_in_at AT TIME ZONE c.timezone) BETWEEN 6 AND 8",
+   "naiv_sql": "SELECT count(*) AS logins FROM logins WHERE extract(hour FROM logged_in_at AT TIME ZONE 'UTC') BETWEEN 6 AND 8",
+   "naiv_fehler": "nimmt die UTC-Stunde statt der Ortszeit des Kunden",
+   "ergebnis": {
+    "spalten": [
+     "logins"
+    ],
+    "zeilen": [
+     [
+      6696
+     ]
+    ]
+   },
+   "naiv_ergebnis": {
+    "spalten": [
+     "logins"
+    ],
+    "zeilen": [
+     [
+      3695
+     ]
+    ]
+   }
+  },
+  {
+   "id": "F05",
+   "typ": "falle",
+   "fallen": [
+    "irrefuehrende_spalte"
+   ],
+   "frage": "Wie viele Kunden hatten am 30. September 2026 ein laufendes Pro-Abo?",
+   "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE started_at < '2026-10-01' AND (ends_at IS NULL OR ends_at >= '2026-10-01')",
+   "naiv_sql": "SELECT count(*) AS kunden FROM customers WHERE is_premium",
+   "naiv_fehler": "is_premium heißt „hatte je Pro“ und wird nach Kündigung nicht zurückgesetzt",
+   "ergebnis": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      201
+     ]
+    ]
+   },
+   "naiv_ergebnis": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      254
+     ]
+    ]
+   }
+  },
+  {
+   "id": "U01",
+   "typ": "unbeantwortbar",
+   "fallen": [],
+   "frage": "Über welchen Marketingkanal kamen im März 2026 die meisten Neukunden?",
+   "fehlende_daten": "Die Herkunft der Kunden (Kampagne, Anzeige, Empfehlung) wird nicht erfasst.",
+   "verbotener_ersatz": "subscriptions.channel (Kaufkanal web/apple/google) oder logins.platform"
+  },
+  {
+   "id": "U02",
+   "typ": "unbeantwortbar",
+   "fallen": [],
+   "frage": "Wie hoch war der NPS im dritten Quartal 2026?",
+   "fehlende_daten": "Es gibt keine Umfrage- oder Bewertungsdaten.",
+   "verbotener_ersatz": "Kündigungsquote oder Kündigungsgründe (cancellations.reason) als Zufriedenheitsersatz"
+  }
+ ],
+ "fallen_belege": [
+  {
+   "falle": "doppelabbuchung",
+   "frage": "F01",
+   "richtig_sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at)\nSELECT sum(betrag) AS umsatz_usd FROM web WHERE zeit >= '2026-09-01' AND zeit < '2026-10-01'",
+   "naiv_sql": "SELECT sum(amount_usd) AS umsatz_usd FROM payments WHERE status = 'succeeded' AND paid_at >= '2026-09-01' AND paid_at < '2026-10-01'",
+   "richtig": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "613.46"
+     ]
+    ]
+   },
+   "naiv": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "686.44"
+     ]
+    ]
+   }
+  },
+  {
+   "falle": "store",
+   "frage": "F02",
+   "richtig_sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nerstattet AS (\n    SELECT refunded_at AS zeit, -amount_usd AS betrag FROM refunds WHERE reason <> 'duplicate_charge'),\nstore AS (SELECT purchased_at AS zeit, proceeds_usd AS betrag FROM store_transactions),\numsatz AS (SELECT * FROM web UNION ALL SELECT * FROM erstattet UNION ALL SELECT * FROM store)\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-04-01' AND zeit < '2026-07-01'",
+   "naiv_sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nerstattet AS (\n    SELECT refunded_at AS zeit, -amount_usd AS betrag FROM refunds WHERE reason <> 'duplicate_charge'),\numsatz AS (SELECT * FROM web UNION ALL SELECT * FROM erstattet)\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-04-01' AND zeit < '2026-07-01'",
+   "richtig": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "3109.63"
+     ]
+    ]
+   },
+   "naiv": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "1592.48"
+     ]
+    ]
+   }
+  },
+  {
+   "falle": "kuendigung",
+   "frage": "F03",
+   "richtig_sql": "SELECT count(DISTINCT s.customer_id) AS kunden FROM cancellations k JOIN subscriptions s USING (subscription_id) WHERE k.cancelled_at >= '2026-08-01' AND k.cancelled_at < '2026-09-01'",
+   "naiv_sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE ends_at >= '2026-08-01' AND ends_at < '2026-09-01'",
+   "richtig": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      55
+     ]
+    ]
+   },
+   "naiv": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      18
+     ]
+    ]
+   }
+  },
+  {
+   "falle": "erstattung",
+   "frage": "E05",
+   "richtig_sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nerstattet AS (\n    SELECT refunded_at AS zeit, -amount_usd AS betrag FROM refunds WHERE reason <> 'duplicate_charge'),\nstore AS (SELECT purchased_at AS zeit, proceeds_usd AS betrag FROM store_transactions),\numsatz AS (SELECT * FROM web UNION ALL SELECT * FROM erstattet UNION ALL SELECT * FROM store)\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-05-01' AND zeit < '2026-06-01'",
+   "naiv_sql": "WITH web AS (  -- je Rechnung nur die erste erfolgreiche Zahlung; weitere sind Doppelabbuchungen\n    SELECT DISTINCT ON (invoice_id) paid_at AS zeit, amount_usd AS betrag\n    FROM payments WHERE status = 'succeeded' ORDER BY invoice_id, paid_at),\nstore AS (SELECT purchased_at AS zeit, proceeds_usd AS betrag FROM store_transactions),\numsatz AS (SELECT * FROM web UNION ALL SELECT * FROM store)\nSELECT sum(betrag) AS umsatz_usd FROM umsatz WHERE zeit >= '2026-05-01' AND zeit < '2026-06-01'",
+   "richtig": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "1224.34"
+     ]
+    ]
+   },
+   "naiv": {
+    "spalten": [
+     "umsatz_usd"
+    ],
+    "zeilen": [
+     [
+      "1344.34"
+     ]
+    ]
+   }
+  },
+  {
+   "falle": "zeitzone",
+   "frage": "F04",
+   "richtig_sql": "SELECT count(*) AS logins FROM logins l JOIN customers c USING (customer_id) WHERE extract(hour FROM l.logged_in_at AT TIME ZONE c.timezone) BETWEEN 6 AND 8",
+   "naiv_sql": "SELECT count(*) AS logins FROM logins WHERE extract(hour FROM logged_in_at AT TIME ZONE 'UTC') BETWEEN 6 AND 8",
+   "richtig": {
+    "spalten": [
+     "logins"
+    ],
+    "zeilen": [
+     [
+      6696
+     ]
+    ]
+   },
+   "naiv": {
+    "spalten": [
+     "logins"
+    ],
+    "zeilen": [
+     [
+      3695
+     ]
+    ]
+   }
+  },
+  {
+   "falle": "irrefuehrende_spalte",
+   "frage": "F05",
+   "richtig_sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE started_at < '2026-10-01' AND (ends_at IS NULL OR ends_at >= '2026-10-01')",
+   "naiv_sql": "SELECT count(*) AS kunden FROM customers WHERE is_premium",
+   "richtig": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      201
+     ]
+    ]
+   },
+   "naiv": {
+    "spalten": [
+     "kunden"
+    ],
+    "zeilen": [
+     [
+      254
+     ]
+    ]
+   }
+  }
+ ]
+}

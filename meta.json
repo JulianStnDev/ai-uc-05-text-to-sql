@@ -1,7 +1,12 @@
 {
-  "title": "",
-  "status": "planned",
-  "tags": [],
-  "summary": "",
+  "title": "Text-to-SQL: An Analytics Copilot on Trap-Laden Data",
+  "status": "active",
+  "tags": [
+    "text-to-sql",
+    "analytics",
+    "evals",
+    "postgres"
+  ],
+  "summary": "An analytics copilot answering business questions in SQL, measured on a goldset whose data hides the business rules a schema cannot show.",
   "metrics": []
 }
