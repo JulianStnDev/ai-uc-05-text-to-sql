@@ -25,7 +25,10 @@ was das Modell sieht.
 ## Goldset
 - Quelle: `evals/goldset_fragen.py` (Fragen + Referenz-SQL). Ergebnisse berechnet `scripts/goldset_berechnen.py` nach
   `evals/goldset.json` und `evals/goldset.md`. Diese beiden nicht von Hand bearbeiten.
-- 25 Fragen: 15 eindeutig, 5 mehrdeutig (richtige Antwort: Rückfrage, dazu die Deutungen), 5 Fallen.
+- 27 Fragen: 14 eindeutig, 6 mehrdeutig (richtige Antwort: Rückfrage, dazu die Deutungen), 5 Fallen,
+  2 unbeantwortbar (richtige Antwort: keine Daten dazu). IDs bleiben stabil.
+- Vergleichsregeln stehen als Code in `scripts/vergleich.py` (festgelegt vor der ersten Messung). Nicht nachträglich
+  an Ergebnisse anpassen; jede Änderung als datierte Entscheidung in docs/decisions.md.
 - Referenz-SQL ohne `now()`/`current_date`: feste Daten, Stichtag 30.09.2026.
 
 ## Kosten

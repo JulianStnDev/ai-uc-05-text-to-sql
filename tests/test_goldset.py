@@ -13,21 +13,26 @@ FALLEN = {"doppelabbuchung", "store", "kuendigung", "erstattung", "zeitzone", "i
 
 
 def alle_sql(f):
-    return [f.get("sql"), f.get("naiv_sql")] + [d["sql"] for d in f.get("deutungen", [])]
+    return [f.get("sql"), f.get("naiv_sql"), (f.get("mit_glossar") or {}).get("sql")] + [d["sql"] for d in f.get("deutungen", [])]
 
 
 def test_aufbau():
     typen = [f["typ"] for f in FRAGEN]
-    assert len(FRAGEN) == 25 and (typen.count("eindeutig"), typen.count("mehrdeutig"), typen.count("falle")) == (15, 5, 5)
-    assert len({f["id"] for f in FRAGEN}) == 25
+    anzahl = {t: typen.count(t) for t in ("eindeutig", "mehrdeutig", "falle", "unbeantwortbar")}
+    assert len(FRAGEN) == 27 and anzahl == {"eindeutig": 14, "mehrdeutig": 6, "falle": 5, "unbeantwortbar": 2}
+    assert len({f["id"] for f in FRAGEN}) == 27
+    assert all(f["id"][0] == {"eindeutig": "E", "mehrdeutig": "M", "falle": "F", "unbeantwortbar": "U"}[f["typ"]] for f in FRAGEN)
     for f in FRAGEN:
         assert f["frage"].endswith("?") and set(f["fallen"]) <= FALLEN
         if f["typ"] == "mehrdeutig":
             assert f["rueckfrage"] and len(f["deutungen"]) >= 2 and "sql" not in f
+        elif f["typ"] == "unbeantwortbar":
+            assert f["fehlende_daten"] and f["verbotener_ersatz"] and "sql" not in f
         else:
             assert f["sql"]
         if f["typ"] == "falle":
             assert len(f["fallen"]) == 1 and f["naiv_sql"] and f["naiv_fehler"]
+    assert [f["id"] for f in FRAGEN if f.get("mit_glossar")] == ["M06"]
 
 
 def test_jede_falle_ist_belegt():

@@ -11,7 +11,8 @@ Stand: 30.09.2026, Entwurf.
   Morgens = 06:00–08:59, abends = 18:00–22:59, nachts = 23:00–05:59 Ortszeit.
 
 ## Kunden
-- **Kunde:** jedes registrierte Konto (`customers`), mit oder ohne Abo.
+- **Kunde** allein ist im Haus mehrdeutig (registriertes Konto, Pro-Kunde oder aktiver Kunde). Immer präzisieren:
+  **Konto** = jede Zeile in `customers`, mit oder ohne Abo.
 - **Neukunde:** Registrierung (`signup_at`) im betrachteten Zeitraum.
 - **Pro-Kunde (zahlender Kunde) zum Stichtag:** hat ein laufendes Abo, also `started_at` vor dem Ende des Stichtags und
   `ends_at` leer oder nach dem Ende des Stichtags. **`customers.is_premium` bedeutet „hatte irgendwann ein Pro-Abo“**

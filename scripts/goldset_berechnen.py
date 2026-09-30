@@ -2,8 +2,9 @@
 
     .venv/bin/python scripts/goldset_berechnen.py
 
-Liest evals/goldset_fragen.py, schreibt evals/goldset.json (Fragen, SQL, Ergebnisse) und evals/goldset.md
-(Tabelle zur Durchsicht). Bricht ab, wenn eine naive Abfrage dasselbe Ergebnis liefert wie die Referenz.
+Liest evals/goldset_fragen.py, schreibt evals/goldset.json (Fragen, SQL, Ergebnisse), evals/goldset.md und den
+Goldset-Abschnitt in docs/DATA_NOTES.md (zwischen den GOLDSET-Markern). Bricht ab, wenn eine naive Abfrage dasselbe
+Ergebnis liefert wie die Referenz.
 """
 
 import json
@@ -52,8 +53,10 @@ def berechnen(c) -> tuple[list[dict], list[dict]]:
         e = dict(f)
         if f["typ"] == "mehrdeutig":
             e["deutungen"] = [{**d, "ergebnis": ausfuehren(c, d["sql"])} for d in f["deutungen"]]
-        else:
+        elif f["typ"] != "unbeantwortbar":
             e["ergebnis"] = ausfuehren(c, f["sql"])
+        if f.get("mit_glossar"):
+            e["mit_glossar"] = {**f["mit_glossar"], "ergebnis": ausfuehren(c, f["mit_glossar"]["sql"])}
         if f.get("naiv_sql"):
             e["naiv_ergebnis"] = ausfuehren(c, f["naiv_sql"])
             if e["naiv_ergebnis"]["zeilen"] == e["ergebnis"]["zeilen"]:
@@ -74,6 +77,10 @@ def tabelle(ergebnisse: list[dict]) -> str:
         if e["typ"] == "mehrdeutig":
             erwartet = f"**Rückfrage:** {e['rueckfrage']}<br>" + "<br>".join(
                 f"({i}) {d['deutung']}: {kurz(d['ergebnis'])}" for i, d in enumerate(e["deutungen"], 1))
+            if e.get("mit_glossar"):
+                erwartet += f"<br>**Mit Glossar (Branch c) eindeutig:** {kurz(e['mit_glossar']['ergebnis'])}"
+        elif e["typ"] == "unbeantwortbar":
+            erwartet = f"**Keine Daten:** {e['fehlende_daten']}<br>Falsch wäre: {e['verbotener_ersatz']}"
         else:
             erwartet = kurz(e["ergebnis"])
         naiv = f"{kurz(e['naiv_ergebnis'])} ({e['naiv_fehler']})" if e.get("naiv_ergebnis") else ""
@@ -81,9 +88,20 @@ def tabelle(ergebnisse: list[dict]) -> str:
     return "\n".join(zeilen)
 
 
+def data_notes_aktualisieren(ergebnisse: list[dict]) -> None:
+    pfad = WURZEL / "docs" / "DATA_NOTES.md"
+    text = pfad.read_text(encoding="utf-8")
+    start, ende = "<!-- GOLDSET:START -->", "<!-- GOLDSET:END -->"
+    if start not in text:
+        raise SystemExit("GOLDSET-Marker fehlen in docs/DATA_NOTES.md")
+    kopf, rest = text.split(start, 1)
+    pfad.write_text(f"{kopf}{start}\n{tabelle(ergebnisse)}\n{ende}{rest.split(ende, 1)[1]}", encoding="utf-8")
+
+
 def main() -> None:
     with verbinden() as c:
         ergebnisse, belege = berechnen(c)
+    data_notes_aktualisieren(ergebnisse)
     (WURZEL / "evals" / "goldset.json").write_text(
         json.dumps({"fragen": ergebnisse, "fallen_belege": belege}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     (WURZEL / "evals" / "goldset.md").write_text(
@@ -92,7 +110,8 @@ def main() -> None:
         + "\n".join(f"| {b['falle']} | {b['frage']} | {kurz(b['richtig'])} | {kurz(b['naiv'])} |" for b in belege) + "\n",
         encoding="utf-8")
     typen = [e["typ"] for e in ergebnisse]
-    print(f"{len(ergebnisse)} Fragen: {typen.count('eindeutig')} eindeutig, {typen.count('mehrdeutig')} mehrdeutig, {typen.count('falle')} Fallen")
+    print(f"{len(ergebnisse)} Fragen: {typen.count('eindeutig')} eindeutig, {typen.count('mehrdeutig')} mehrdeutig, "
+          f"{typen.count('falle')} Fallen, {typen.count('unbeantwortbar')} unbeantwortbar")
     for b in belege:
         print(f"  {b['falle']:22} richtig {kurz(b['richtig']):28} naiv {kurz(b['naiv'])}")
 

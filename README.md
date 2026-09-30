@@ -41,7 +41,9 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 | Misleading column | Running Pro subscriptions on 30.09. | 201 | 254 |
 
 ## Evaluation Results
-Goldset: 25 questions in German, 15 unambiguous, 5 ambiguous (correct answer: a clarifying question, plus every interpretation with SQL and result), 5 aimed at the traps. Table: [evals/goldset.md](evals/goldset.md). Measurements follow in branches (b) and (c).
+Goldset: 27 questions in German, reviewed before any measurement: 14 unambiguous, 6 ambiguous (correct answer: a clarifying question, plus every interpretation with SQL and result), 5 aimed at the traps, 2 unanswerable (correct answer: "no data on this"; a substitute query on a similar column counts as wrong). Table: [evals/goldset.md](evals/goldset.md).
+
+Comparison rules were fixed as code before the first measurement ([scripts/vergleich.py](scripts/vergleich.py)): the executed SQL result is compared, not the prose; integers exactly, decimals within one unit of the last digit; German and English number formats; column names and extra columns do not matter, row count does; row order only for top-N questions; a clarifying question is correct for ambiguous and unanswerable questions and wrong for all others. A self-test checks that every reference counts as correct and every naive trap answer as wrong. Measurements follow in branches (b) and (c).
 
 ## Cost & Latency
 - Cost per 1000 requests: pending (branch b)
@@ -60,6 +62,7 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # once: database, role
 
 ## Learnings
 - **Every trap needs a counter-query.** Only when the naive query with exactly one mistake returns a different number is the trap real. The script aborts otherwise.
+- **Fix the comparison rules before measuring.** Otherwise the tolerance is chosen after seeing the results. The self-test also shows that a tolerance of one unit in the last digit does not swallow any trap.
 - **Check realism against the numbers.** The first version of the login data had 586 of 600 customers active in September because free users never went dormant. The measure would have been meaningless.
 - **Fix the session time zone.** Date boundaries like `'2026-05-01'` depend on the session time zone; all scripts set UTC.
 

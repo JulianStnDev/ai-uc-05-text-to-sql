@@ -3,7 +3,11 @@
 Die Ergebnisse berechnet scripts/goldset_berechnen.py als analyst_ro aus der Datenbank und schreibt sie nach
 evals/goldset.json (+ evals/goldset.md zur Durchsicht). Hier stehen nur Fragen und SQL.
 
-Typen: eindeutig (15) | mehrdeutig (5, richtige Antwort ist eine Rückfrage, dazu die Deutungen) | falle (5).
+Typen: eindeutig (14) | mehrdeutig (6, richtige Antwort ist eine Rückfrage, dazu die Deutungen) | falle (5)
+       | unbeantwortbar (2, richtige Antwort: keine Daten dazu; eine Ersatz-Abfrage mit ähnlicher Spalte ist falsch).
+IDs bleiben stabil: E09 wurde bei der Durchsicht (30.09.2026) zu M06, M02 wurde ersetzt.
+`reihenfolge: True` heißt: Die Reihenfolge der Zeilen gehört zur Antwort. `mit_glossar` gilt nur in Branch (c).
+Vergleichsregeln: scripts/vergleich.py.
 Fallen: doppelabbuchung, store, kuendigung, erstattung, zeitzone, irrefuehrende_spalte (docs/DATA_NOTES.md).
 Bei Fallen-Fragen ist `naiv_sql` die Referenz-SQL mit genau dem einen Fehler der Falle.
 Geschäftsdefinitionen: docs/GLOSSAR.md. Alle Grenzen in UTC (die Skripte setzen die Sitzung auf UTC).
@@ -30,7 +34,8 @@ FRAGEN = [
      "sql": "SELECT count(*) AS neukunden FROM customers WHERE signup_at >= '2026-03-01' AND signup_at < '2026-04-01'"},
     {"id": "E02", "typ": "eindeutig", "fallen": [],
      "frage": "In welchen fünf Ländern haben wir die meisten Kunden, und wie viele sind es jeweils?",
-     "sql": "SELECT country, count(*) AS kunden FROM customers GROUP BY country ORDER BY kunden DESC, country LIMIT 5"},
+     "sql": "SELECT country, count(*) AS kunden FROM customers GROUP BY country ORDER BY kunden DESC, country LIMIT 5",
+     "reihenfolge": True},
     {"id": "E03", "typ": "eindeutig", "fallen": [],
      "frage": "Wie viele Pro-Abos wurden im ersten Quartal 2026 abgeschlossen, aufgeteilt nach Kanal?",
      "sql": "SELECT channel, count(*) AS neue_abos FROM subscriptions "
@@ -51,10 +56,6 @@ FRAGEN = [
      "frage": "Wie viele Kunden haben sich im Juli 2026 mindestens einmal eingeloggt?",
      "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins "
             "WHERE logged_in_at >= '2026-07-01' AND logged_in_at < '2026-08-01'"},
-    {"id": "E09", "typ": "eindeutig", "fallen": [],
-     "frage": "Wie viele aktive Kunden hatten wir am 30. September 2026?",
-     "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM logins "
-            "WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'"},
     {"id": "E10", "typ": "eindeutig", "fallen": [],
      "frage": "Über welche Plattform kamen im August 2026 die meisten Logins, und wie viele waren es?",
      "sql": "SELECT platform, count(*) AS logins FROM logins WHERE logged_in_at >= '2026-08-01' AND logged_in_at < '2026-09-01' "
@@ -95,19 +96,16 @@ FRAGEN = [
                  "AND NOT EXISTS (SELECT 1 FROM logins m WHERE m.customer_id = l.customer_id "
                  "AND m.logged_in_at >= '2026-06-01' AND m.logged_in_at < '2026-09-01')"},
      ]},
-    {"id": "M02", "typ": "mehrdeutig", "fallen": ["doppelabbuchung", "store", "erstattung"],
-     "frage": "Wie hat sich der Umsatz im letzten Quartal entwickelt?",
-     "rueckfrage": "Welches Quartal ist gemeint (Q3 2026, das am 30.09. endet, oder das letzte vor heute voll abgeschlossene Q2), "
-                   "und im Vergleich wozu: zum Vorquartal absolut oder in Prozent?",
+    {"id": "M02", "typ": "mehrdeutig", "fallen": ["irrefuehrende_spalte"],
+     "frage": "Wie viele Kunden haben wir?",
+     "rueckfrage": "Welche Kunden meinst du: alle registrierten Konten, zahlende Pro-Kunden oder aktive Kunden? Und zu welchem Stichtag?",
      "deutungen": [
-         {"deutung": "Q3 2026 gegenüber Q2 2026",
-          "sql": f"{UMSATZ},\nq AS (SELECT sum(betrag) FILTER (WHERE zeit >= '2026-04-01' AND zeit < '2026-07-01') AS q2,\n"
-                 "              sum(betrag) FILTER (WHERE zeit >= '2026-07-01' AND zeit < '2026-10-01') AS q3 FROM umsatz)\n"
-                 "SELECT q2, q3, q3 - q2 AS differenz, round(100 * (q3 - q2) / q2, 1) AS prozent FROM q"},
-         {"deutung": "Q2 2026 gegenüber Q1 2026",
-          "sql": f"{UMSATZ},\nq AS (SELECT sum(betrag) FILTER (WHERE zeit >= '2026-01-01' AND zeit < '2026-04-01') AS q1,\n"
-                 "              sum(betrag) FILTER (WHERE zeit >= '2026-04-01' AND zeit < '2026-07-01') AS q2 FROM umsatz)\n"
-                 "SELECT q1, q2, q2 - q1 AS differenz, round(100 * (q2 - q1) / q1, 1) AS prozent FROM q"},
+         {"deutung": "Alle registrierten Konten",
+          "sql": "SELECT count(*) AS kunden FROM customers"},
+         {"deutung": "Pro-Kunden mit laufendem Abo am 30.09.2026",
+          "sql": f"SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE {LAUFEND_AM_STICHTAG}"},
+         {"deutung": "Aktive Kunden (Login in den 30 Tagen bis 30.09.2026)",
+          "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'"},
      ]},
     {"id": "M03", "typ": "mehrdeutig", "fallen": ["store"],
      "frage": "Welcher Kanal ist am besten?",
@@ -151,6 +149,24 @@ FRAGEN = [
           "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM logins WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'"},
      ]},
 
+    {"id": "M06", "typ": "mehrdeutig", "fallen": [], "vormals": "E09",
+     "frage": "Wie viele aktive Kunden hatten wir am 30. September 2026?",
+     "rueckfrage": "Was heißt aktiv: eingeloggt in den letzten 30 Tagen, in der letzten Woche, oder mit laufendem Pro-Abo?",
+     "deutungen": [
+         {"deutung": "Login in den 30 Tagen bis 30.09.2026 (Definition laut Glossar)",
+          "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM logins "
+                 "WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'"},
+         {"deutung": "Login in den 7 Tagen bis 30.09.2026",
+          "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM logins "
+                 "WHERE logged_in_at >= '2026-09-24' AND logged_in_at < '2026-10-01'"},
+         {"deutung": "Laufendes Pro-Abo am 30.09.2026",
+          "sql": f"SELECT count(DISTINCT customer_id) AS aktive_kunden FROM subscriptions WHERE {LAUFEND_AM_STICHTAG}"},
+     ],
+     # Mit Glossar (Branch c) ist „aktiv“ definiert: dann eindeutig, erwartet wird die Zahl.
+     "mit_glossar": {"typ": "eindeutig",
+                     "sql": "SELECT count(DISTINCT customer_id) AS aktive_kunden FROM logins "
+                            "WHERE logged_in_at >= '2026-09-01' AND logged_in_at < '2026-10-01'"}},
+
     # ---------- Fallen: naive_sql = Referenz mit genau dem einen Fehler ----------
     {"id": "F01", "typ": "falle", "fallen": ["doppelabbuchung"],
      "frage": "Wie hoch war der Web-Umsatz im September 2026 vor Erstattungen?",
@@ -181,9 +197,19 @@ FRAGEN = [
      "sql": f"SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE {LAUFEND_AM_STICHTAG}",
      "naiv_sql": "SELECT count(*) AS kunden FROM customers WHERE is_premium",
      "naiv_fehler": "is_premium heißt „hatte je Pro“ und wird nach Kündigung nicht zurückgesetzt"},
+
+    # ---------- unbeantwortbar: richtige Antwort ist „keine Daten dazu“ ----------
+    {"id": "U01", "typ": "unbeantwortbar", "fallen": [],
+     "frage": "Über welchen Marketingkanal kamen im März 2026 die meisten Neukunden?",
+     "fehlende_daten": "Die Herkunft der Kunden (Kampagne, Anzeige, Empfehlung) wird nicht erfasst.",
+     "verbotener_ersatz": "subscriptions.channel (Kaufkanal web/apple/google) oder logins.platform"},
+    {"id": "U02", "typ": "unbeantwortbar", "fallen": [],
+     "frage": "Wie hoch war der NPS im dritten Quartal 2026?",
+     "fehlende_daten": "Es gibt keine Umfrage- oder Bewertungsdaten.",
+     "verbotener_ersatz": "Kündigungsquote oder Kündigungsgründe (cancellations.reason) als Zufriedenheitsersatz"},
 ]
 
-# Beleg für jede der sechs Fallen (auch erstattung, die im Goldset nur in E05/E06/M02 vorkommt): richtig vs. naiv.
+# Beleg für jede der sechs Fallen (auch erstattung, die im Goldset nur in E05 und E06 vorkommt): richtig vs. naiv.
 FALLEN_BELEGE = [
     {"falle": "doppelabbuchung", "frage": "F01", "richtig_sql": next(f["sql"] for f in FRAGEN if f["id"] == "F01"),
      "naiv_sql": next(f["naiv_sql"] for f in FRAGEN if f["id"] == "F01")},

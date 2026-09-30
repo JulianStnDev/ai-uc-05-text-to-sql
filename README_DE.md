@@ -41,7 +41,9 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 | Irreführende Spalte | Laufende Pro-Abos am 30.09. | 201 | 254 |
 
 ## Evaluationsergebnisse
-Goldset: 25 Fragen auf Deutsch, 15 eindeutig, 5 mehrdeutig (richtige Antwort: eine Rückfrage, dazu jede Deutung mit SQL und Ergebnis), 5 gezielt auf die Fallen. Tabelle: [evals/goldset.md](evals/goldset.md). Messungen folgen in Branch (b) und (c).
+Goldset: 27 Fragen auf Deutsch, vor jeder Messung durchgesehen: 14 eindeutig, 6 mehrdeutig (richtige Antwort: eine Rückfrage, dazu jede Deutung mit SQL und Ergebnis), 5 gezielt auf die Fallen, 2 unbeantwortbar (richtige Antwort: „keine Daten dazu“; eine Ersatz-Abfrage mit ähnlicher Spalte gilt als falsch). Tabelle: [evals/goldset.md](evals/goldset.md).
+
+Die Vergleichsregeln stehen vor der ersten Messung als Code fest ([scripts/vergleich.py](scripts/vergleich.py)): verglichen wird das Ergebnis der ausgeführten SQL, nicht der Fließtext; Ganzzahlen exakt, Dezimalzahlen auf eine Einheit der letzten Stelle; deutsches und englisches Zahlenformat; Spaltennamen und zusätzliche Spalten egal, die Zeilenzahl nicht; Zeilenreihenfolge nur bei Top-N-Fragen; eine Rückfrage ist bei mehrdeutigen und unbeantwortbaren Fragen richtig, bei allen anderen falsch. Ein Selbsttest prüft, dass jede Referenz als richtig und jede naive Fallen-Antwort als falsch gilt. Messungen folgen in Branch (b) und (c).
 
 ## Kosten & Latenz
 - Kosten pro 1000 Requests: folgt (Branch b)
@@ -60,6 +62,7 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # einmalig: Datenbank,
 
 ## Learnings
 - **Jede Falle braucht eine Gegenabfrage.** Erst wenn die naive Abfrage mit genau einem Fehler eine andere Zahl liefert, ist die Falle echt. Das Skript bricht sonst ab.
+- **Vergleichsregeln vor der Messung festlegen.** Sonst wird die Toleranz gewählt, nachdem man die Ergebnisse gesehen hat. Der Selbsttest zeigt außerdem, dass eine Toleranz von einer Einheit der letzten Stelle keine Falle verschluckt.
 - **Realismus an den Zahlen prüfen.** Die erste Fassung der Login-Daten hatte 586 von 600 Kunden im September aktiv, weil Gratis-Nutzer nie einschliefen. Die Kennzahl wäre wertlos gewesen.
 - **Sitzungs-Zeitzone festlegen.** Datumsgrenzen wie `'2026-05-01'` hängen von der Zeitzone der Sitzung ab; alle Skripte setzen UTC.
 

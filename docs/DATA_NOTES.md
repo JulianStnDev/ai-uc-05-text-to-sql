@@ -69,8 +69,8 @@ genau dem einen Fehler, sodass der Unterschied genau diese Falle belegt (Werte a
   Erstattungen von Doppelabbuchungen.
 - **Richtig:** Erstattungen außer `duplicate_charge` im Monat von `refunded_at` abziehen.
 - **Naiv:** Summe der Zahlungen ohne Abzug.
-- Im Goldset gibt es dafür keine eigene Fallen-Frage (fünf Fallen-Fragen für sechs Fallen). Die Falle steckt in E05,
-  E06 und M02 und ist oben mit E05 belegt.
+- Im Goldset gibt es dafür keine eigene Fallen-Frage (fünf Fallen-Fragen für sechs Fallen). Die Falle steckt in E05
+  und E06 und ist oben mit E05 belegt.
 
 ### 5. Zeitstempel in UTC, Kunden in anderen Zeitzonen
 - **Gebaut:** Logins werden in Ortszeit erzeugt (Spitzen 6–9 Uhr und 19–23 Uhr) und in UTC gespeichert.
@@ -85,6 +85,45 @@ genau dem einen Fehler, sodass der Unterschied genau diese Falle belegt (Werte a
 - **Richtig:** laufendes Abo zum Stichtag (`started_at` davor, `ends_at` leer oder danach).
 - **Naiv:** `COUNT(*) WHERE is_premium`, 53 Kunden zu viel.
 
+## Goldset
+
+27 Fragen: 14 eindeutig (E), 6 mehrdeutig (M), 5 Fallen (F), 2 unbeantwortbar (U). Quelle `evals/goldset_fragen.py`,
+Vergleichsregeln `scripts/vergleich.py`. Die Tabelle schreibt `scripts/goldset_berechnen.py`, nicht von Hand ändern.
+Durchsicht und Korrekturen durch Julian am 30.09.2026: E09 wurde M06 (ohne Glossar ist „aktiv“ mehrdeutig, mit Glossar
+erwartet: 374), M02 ersetzt durch „Wie viele Kunden haben wir?“, U01/U02 neu.
+
+<!-- GOLDSET:START -->
+| ID | Typ | Frage | Falle | Erwartet | Naiv (Falle) |
+|---|---|---|---|---|---|
+| E01 | eindeutig | Wie viele Kunden haben sich im März 2026 registriert? | – | neukunden: 54 |  |
+| E02 | eindeutig | In welchen fünf Ländern haben wir die meisten Kunden, und wie viele sind es jeweils? | – | DE 189 · US 121 · GB 52 · AU 45 · JP 38 |  |
+| E03 | eindeutig | Wie viele Pro-Abos wurden im ersten Quartal 2026 abgeschlossen, aufgeteilt nach Kanal? | – | apple 15 · google 9 · web 34 |  |
+| E04 | eindeutig | Wie viele Kunden hatten am 30. September 2026 ein laufendes Jahresabo? | irrefuehrende_spalte | kunden: 98 |  |
+| E05 | eindeutig | Wie hoch war der Umsatz im Mai 2026? | doppelabbuchung, store, erstattung | umsatz_usd: 1224.34 |  |
+| E06 | eindeutig | Wie viel Geld haben wir im Gesamtzeitraum an Kunden erstattet, ohne die Erstattungen von Doppelabbuchungen? | doppelabbuchung, erstattung | erstattungen: 25, summe_usd: 604.94 |  |
+| E07 | eindeutig | Welcher Kündigungsgrund wurde am häufigsten angegeben, und wie oft? | – | reason: price_increase, anzahl: 49 |  |
+| E08 | eindeutig | Wie viele Kunden haben sich im Juli 2026 mindestens einmal eingeloggt? | – | kunden: 316 |  |
+| E10 | eindeutig | Über welche Plattform kamen im August 2026 die meisten Logins, und wie viele waren es? | – | platform: ios, logins: 2239 |  |
+| E11 | eindeutig | Wie viele Web-Zahlungen sind im Gesamtzeitraum fehlgeschlagen? | – | fehlgeschlagen: 17 |  |
+| E12 | eindeutig | Wie viele Tage vergehen im Median zwischen Registrierung und erstem Pro-Abo? | – | median_tage: 7.4 |  |
+| E13 | eindeutig | Wie viele Kunden haben mehr als ein Abo abgeschlossen? | – | kunden: 10 |  |
+| E14 | eindeutig | Wie viele Abos endeten im September 2026? | kuendigung | beendete_abos: 22 |  |
+| E15 | eindeutig | Wie hoch war der Umsatz aus Käufen im Apple App Store im zweiten Quartal 2026? | store | umsatz_usd: 1020.23 |  |
+| M01 | mehrdeutig | Wie viele Kunden haben wir im Sommer verloren? | kuendigung | **Rückfrage:** Was heißt „verloren“: gekündigt, Abo beendet oder nicht mehr genutzt? Und ist mit Sommer Juni bis August gemeint?<br>(1) Kunden mit Kündigung (cancelled_at) von Juni bis August 2026: kunden: 65<br>(2) Kunden, deren Abo von Juni bis August 2026 endete und die am 31.08. kein laufendes Abo hatten: kunden: 23<br>(3) Kunden mit Login im Mai 2026, aber keinem Login von Juni bis August: kunden: 30 |  |
+| M02 | mehrdeutig | Wie viele Kunden haben wir? | irrefuehrende_spalte | **Rückfrage:** Welche Kunden meinst du: alle registrierten Konten, zahlende Pro-Kunden oder aktive Kunden? Und zu welchem Stichtag?<br>(1) Alle registrierten Konten: kunden: 600<br>(2) Pro-Kunden mit laufendem Abo am 30.09.2026: kunden: 201<br>(3) Aktive Kunden (Login in den 30 Tagen bis 30.09.2026): kunden: 374 |  |
+| M03 | mehrdeutig | Welcher Kanal ist am besten? | store | **Rückfrage:** Woran gemessen: am Umsatz, an der Zahl neuer Abos oder daran, wie selten gekündigt wird?<br>(1) Umsatz je Kanal im Gesamtzeitraum: web 5018.91 · apple 3008.59 · google 1331.74<br>(2) Neue Abos je Kanal im Gesamtzeitraum: web 140 · apple 87 · google 38<br>(3) Anteil gekündigter Abos je Kanal (niedrig ist gut): apple 28.7 · web 38.6 · google 39.5 |  |
+| M04 | mehrdeutig | Wie hoch ist unsere Kündigungsquote? | kuendigung | **Rückfrage:** Für welchen Zeitraum und auf welcher Basis: Anteil aller Abos, monatlich (z. B. August 2026) oder je Kunde?<br>(1) Anteil gekündigter Abos an allen Abos im Gesamtzeitraum: prozent: 35.5<br>(2) Monatlich, August 2026: Kündigungen im August / am 01.08. laufende Abos: prozent: 31.5<br>(3) Je Kunde: Kunden mit mindestens einer Kündigung / Kunden mit mindestens einem Abo: prozent: 35.4 |  |
+| M05 | mehrdeutig | Wie viele Kunden nutzen FocusFlow regelmäßig? | – | **Rückfrage:** Was heißt regelmäßig und in welchem Zeitraum: an mindestens 10 Tagen im Monat, jede Woche, oder aktiv laut Definition (Login in den letzten 30 Tagen)?<br>(1) Login an mindestens 10 verschiedenen Tagen im September 2026: kunden: 217<br>(2) Login in jeder der vier Wochen 01.–28.09.2026: kunden: 241<br>(3) Aktive Kunden laut Glossar (Login in den 30 Tagen bis 30.09.2026): kunden: 374 |  |
+| M06 | mehrdeutig | Wie viele aktive Kunden hatten wir am 30. September 2026? | – | **Rückfrage:** Was heißt aktiv: eingeloggt in den letzten 30 Tagen, in der letzten Woche, oder mit laufendem Pro-Abo?<br>(1) Login in den 30 Tagen bis 30.09.2026 (Definition laut Glossar): aktive_kunden: 374<br>(2) Login in den 7 Tagen bis 30.09.2026: aktive_kunden: 306<br>(3) Laufendes Pro-Abo am 30.09.2026: aktive_kunden: 201<br>**Mit Glossar (Branch c) eindeutig:** aktive_kunden: 374 |  |
+| F01 | falle | Wie hoch war der Web-Umsatz im September 2026 vor Erstattungen? | doppelabbuchung | umsatz_usd: 613.46 | umsatz_usd: 686.44 (zählt Doppelabbuchungen (zweite Zahlung zur selben Rechnung) als Umsatz) |
+| F02 | falle | Wie hoch war der Umsatz im zweiten Quartal 2026 insgesamt? | store | umsatz_usd: 3109.63 | umsatz_usd: 1592.48 (rechnet nur payments; Apple- und Google-Käufe stehen in store_transactions) |
+| F03 | falle | Wie viele Kunden haben im August 2026 gekündigt? | kuendigung | kunden: 55 | kunden: 18 (nimmt das Abo-Ende statt der Kündigungserklärung; Kündigungen im August enden meist im September) |
+| F04 | falle | Wie viele Logins fanden im Gesamtzeitraum morgens zwischen 6 und 9 Uhr statt? | zeitzone | logins: 6696 | logins: 3695 (nimmt die UTC-Stunde statt der Ortszeit des Kunden) |
+| F05 | falle | Wie viele Kunden hatten am 30. September 2026 ein laufendes Pro-Abo? | irrefuehrende_spalte | kunden: 201 | kunden: 254 (is_premium heißt „hatte je Pro“ und wird nach Kündigung nicht zurückgesetzt) |
+| U01 | unbeantwortbar | Über welchen Marketingkanal kamen im März 2026 die meisten Neukunden? | – | **Keine Daten:** Die Herkunft der Kunden (Kampagne, Anzeige, Empfehlung) wird nicht erfasst.<br>Falsch wäre: subscriptions.channel (Kaufkanal web/apple/google) oder logins.platform |  |
+| U02 | unbeantwortbar | Wie hoch war der NPS im dritten Quartal 2026? | – | **Keine Daten:** Es gibt keine Umfrage- oder Bewertungsdaten.<br>Falsch wäre: Kündigungsquote oder Kündigungsgründe (cancellations.reason) als Zufriedenheitsersatz |  |
+<!-- GOLDSET:END -->
+
 ## Weitere Eigenheiten (keine Fallen, aber wichtig für Referenz-SQL)
 - **Fehlgeschlagene Zahlungen:** 5 % der ersten Einzüge scheitern (`status = 'failed'`), die Wiederholung 1–2 Tage später
   gelingt. Gleiche `invoice_id`. Nie Umsatz.
@@ -98,6 +137,6 @@ genau dem einen Fehler, sodass der Unterschied genau diese Falle belegt (Werte a
 
 ## Mehrdeutige Fragen: warum sie mehrdeutig bleiben
 Das Glossar (Branch c) definiert Begriffe wie Umsatz, Kündigung, aktiver Kunde. Es legt aber bewusst **nicht** fest,
-was „verloren“, „regelmäßig“, „am besten“, „letztes Quartal“ oder eine „Kündigungsquote“ ohne Zeitraum bedeuten. Die fünf
-mehrdeutigen Fragen sollen auch mit Glossar eine Rückfrage auslösen. Die Deutungen im Goldset liefern deutlich
-verschiedene Zahlen (z. B. M01: 65, 23 oder 30 Kunden).
+was „verloren“, „regelmäßig“ oder „am besten“ heißt oder welche Kündigungsquote gemeint ist. „Kunde“ allein erklärt es
+ausdrücklich für mehrdeutig. M01–M05 sollen deshalb auch mit Glossar eine Rückfrage auslösen. Nur M06 („aktive Kunden“)
+wird mit Glossar eindeutig (374). Die Deutungen liefern deutlich verschiedene Zahlen (z. B. M01: 65, 23 oder 30 Kunden).

@@ -59,3 +59,30 @@ Rückfrage, dazu jede Deutung mit SQL und Ergebnis. Das Glossar legt bewusst nic
 „am besten“ oder „letztes Quartal“ heißt, damit diese Fragen auch in Branch (c) mehrdeutig bleiben. Referenz-SQL nutzt nie
 `now()`, sondern feste Daten (Stichtag 30.09.2026), und läuft als `analyst_ro` mit `SET TIME ZONE 'UTC'`.
 Fünf Fallen-Fragen für sechs Fallen: Die Erstattungs-Falle steckt in E05, E06 und M02 und ist in DATA_NOTES belegt.
+
+## 2026-09-30: Goldset nach Durchsicht, Vergleichsregeln vor der ersten Messung
+
+Durchsicht durch Julian:
+- E09 („aktive Kunden am 30.09.“) wird M06. Ohne Glossar ist „aktiv“ mehrdeutig. Mit Glossar (Branch c) ist die Frage
+  eindeutig, erwartet 374 (`mit_glossar`).
+- M02 ersetzt durch „Wie viele Kunden haben wir?“ (Deutungen: alle Konten 600, Pro-Kunden 201, aktive Kunden 374).
+  Damit die Frage auch in Branch (c) mehrdeutig bleibt, nennt das Glossar „Kunde“ allein ausdrücklich mehrdeutig
+  statt es als „jedes Konto“ zu definieren.
+- Neu: zwei unbeantwortbare Fragen, U01 Marketingkanal der Neukunden, U02 NPS. Richtige Antwort: keine Daten dazu.
+  Eine Ersatz-Abfrage mit ähnlicher Spalte (`subscriptions.channel`, Kündigungsgründe) ist falsch.
+- Erstattungs-Falle ohne eigene Frage und F01 bleiben wie sie sind.
+- Damit 27 Fragen: 14 eindeutig, 6 mehrdeutig, 5 Fallen, 2 unbeantwortbar. IDs bleiben stabil (E09 fehlt).
+
+Vergleichsregeln, als Code in `scripts/vergleich.py` und festgelegt, bevor irgendetwas gemessen wird:
+- Verglichen wird das Ergebnis der ausgeführten SQL, nicht der Fließtext.
+- Rundung: Ganzzahlen exakt, Dezimalzahlen ± eine Einheit der letzten Stelle des erwarteten Werts.
+- Prozent: Bei Spalten „…prozent…“ zählt auch der Anteil (0,355 statt 35,5).
+- Zahlenformat: deutsches und englisches Format, Währungs- und Prozentzeichen werden normalisiert.
+- Spaltennamen und -reihenfolge egal, zusätzliche Spalten erlaubt, Zeilenzahl muss stimmen.
+- Zeilenreihenfolge nur bei `reihenfolge: True` (E02, Top 5).
+- Rückfragen: bei M und U richtig, bei E und F falsch. „Keine Daten“ nur bei U richtig. Bei M ist eine Zahl falsch,
+  auch wenn sie zu einer Deutung passt.
+
+Selbsttest (`tests/test_vergleich.py`): Jede Referenz gilt als richtig. Jede naive Antwort der Fallen gilt als falsch,
+die Toleranz verschluckt also keine Falle. Jede Deutung einer M-Frage gilt ohne Rückfrage als falsch.
+
