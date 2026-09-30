@@ -257,3 +257,20 @@ Schätzung: Prompt bei Haiku 3.439 Tokens (Glossar allein 2.898, nur Schema 1.73
   (`max_kosten_usd`, nur in der App; Messläufe unverändert). Abbruch vor dem Aufruf, der die Grenze voraussichtlich
   überschreitet, mit freundlicher Meldung. Sitzung bleibt 0,25 USD, also mindestens fünf Fragen je Sitzung.
 - Galerie-Karten sind per `?lauf=…&frage=…&wdh=…` direkt verlinkbar (ohne API-Kosten).
+
+## 2026-09-30: Branch (e): Guardrails
+
+- **Spaltenrechte:** `analyst_ro` darf `customers.email` nicht lesen (`rechte_setzen()` in scripts/laden.py, per
+  `--nur-rechte` ohne Neuladen auf Neon angewendet). Die Rechte gelten sofort für alle Nutzer der Rolle, also auch für
+  spätere Messläufe: Ein `SELECT *` auf `customers` scheitert dort, wo es früher lief. Die gespeicherten Protokolle aus
+  (b), (c) und (d) bleiben gültig; alle Referenz-SQLs des Goldsets laufen weiter (Test).
+- **`email` bleibt im Schema-Prompt sichtbar** (Julian): `db/schema.sql` ist für (b) und (c) eingefroren, und die Demo
+  soll zeigen, dass die Datenbank greift, auch wenn das Modell die Spalte kennt. Eine Sperre, die nur im Prompt
+  steht (Spalte weglassen), wäre keine Sperre.
+- **Harness:** nur eine SQL-Anweisung je Ausführung, sonst wird nichts ausgeführt. Gilt ab jetzt auch in Messläufen
+  (bisher kam das in den gespeicherten Läufen nur einmal vor: Haiku E05 W1 in (b), damals ohnehin fehlerhaft).
+- **Angriffsdemo mit dem Modell nach UC6 verschoben.** Beim Schreiben einer konkreten Liste von Angriffs-Prompts für
+  das Skript hat ein Sicherheitsfilter die Ausgabe gestoppt. Wir haben sie nicht umformuliert. Stattdessen stützt sich
+  docs/GUARDRAILS.md nur auf deterministische Tests der Harness- und Datenbank-Schichten; die Spalte „Modell“ ist als
+  „nicht gemessen, folgt in UC6“ gekennzeichnet. UC6 behandelt Angriffe über das Modell und indirekte Prompt
+  Injection über Daten ohnehin als eigenes Thema, mit eigener Angriffsliste. Kosten in (e): 0 USD.

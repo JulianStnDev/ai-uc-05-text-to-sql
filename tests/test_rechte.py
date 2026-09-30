@@ -35,10 +35,15 @@ def test_schreiben_wird_von_der_datenbank_abgewiesen(ro, art):
 
 
 def test_weitergeben_von_rechten_bleibt_wirkungslos(ro):
-    """Ohne Grant-Option gibt Postgres nur eine Warnung aus ("no privileges were granted"), vergeben wird nichts."""
+    """Ohne Grant-Option vergibt Postgres nichts: bei vollem Tabellenrecht nur eine Warnung ("no privileges were
+    granted"), seit den Spaltenrechten auf customers (Branch e) sogar ein Fehler. Beides ist wirkungslos."""
     ro.execute("SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE")
-    ro.execute("GRANT SELECT ON customers TO PUBLIC")
-    assert ro.execute("SELECT has_table_privilege('public', 'customers', 'SELECT')").fetchone()[0] is False
+    for t in ("customers", "refunds"):
+        try:
+            ro.execute(f"GRANT SELECT ON {t} TO PUBLIC")
+        except errors.InsufficientPrivilege:
+            pass
+        assert ro.execute(f"SELECT has_table_privilege('public', '{t}', 'SELECT')").fetchone()[0] is False
 
 
 def test_rolle_ist_standardmaessig_read_only(ro):
@@ -59,3 +64,49 @@ def test_kein_zugriff_auf_andere_datenbanken_des_projekts():
                     c.execute(f'SELECT 1 FROM "{t}" LIMIT 1')
     except psycopg.OperationalError:
         pass  # Verbindung schon abgewiesen: ebenfalls kein Zugriff
+
+
+# ---------- Branch (e): Guardrails der Datenbank, ohne Modell geprüft ----------
+
+def test_email_ist_fuer_analyst_ro_gesperrt(ro):
+    with pytest.raises(errors.InsufficientPrivilege):
+        ro.execute("SELECT email FROM customers LIMIT 1")
+    with pytest.raises(errors.InsufficientPrivilege):   # SELECT * schließt die gesperrte Spalte ein
+        ro.execute("SELECT * FROM customers LIMIT 1")
+    assert ro.execute("SELECT count(*), count(DISTINCT country) FROM customers").fetchone()[0] == 600
+    assert ro.execute("SELECT has_column_privilege('customers', 'email', 'SELECT')").fetchone()[0] is False
+    assert ro.execute("SELECT has_column_privilege('customers', 'country', 'SELECT')").fetchone()[0] is True
+
+
+@pytest.mark.parametrize("versuch", [
+    "SELECT pg_read_file('/etc/passwd')",
+    "SELECT pg_ls_dir('.')",
+    "COPY (SELECT 1) TO PROGRAM 'id'",
+    "SELECT lo_import('/etc/passwd')",
+    "SELECT rolpassword FROM pg_authid",
+])
+def test_dateien_programme_und_passwoerter_sind_verboten(ro, versuch):
+    with pytest.raises((errors.InsufficientPrivilege, errors.ReadOnlySqlTransaction)):
+        ro.execute(versuch)
+
+
+def test_katalog_zeigt_rollen_aber_keine_passwoerter(ro):
+    """pg_roles ist für alle lesbar (Rollennamen, Rechte-Flags), das Passwort steht dort nur als ********."""
+    zeilen = ro.execute("SELECT rolname, rolpassword FROM pg_roles WHERE rolname = 'analyst_ro'").fetchall()
+    assert zeilen == [("analyst_ro", "********")]
+
+
+def test_zeitlimit_und_keine_erweiterungen(ro):
+    assert ro.execute("SHOW statement_timeout").fetchone()[0] == "15s"
+    erweiterungen = {r[0] for r in ro.execute("SELECT extname FROM pg_extension")}
+    assert not erweiterungen & {"dblink", "postgres_fdw", "file_fdw", "plpython3u"}
+
+
+def test_alle_referenz_sql_laufen_mit_den_spaltenrechten(ro):
+    import json
+    from pathlib import Path
+    fragen = json.loads((Path(__file__).resolve().parents[1] / "evals" / "goldset.json").read_text())["fragen"]
+    for f in fragen:
+        for s in [f.get("sql")] + [d["sql"] for d in f.get("deutungen", [])] + [(f.get("mit_glossar") or {}).get("sql")]:
+            if s:
+                ro.execute(s).fetchall()
