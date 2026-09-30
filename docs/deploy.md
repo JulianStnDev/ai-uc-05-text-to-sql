@@ -1,5 +1,6 @@
 # Deployment auf Cloud Run (Frankfurt)
 
+Live: https://uc5-807149335205.europe-west3.run.app (Revision uc5-00001, deployt 2026-09-30).
 Stand 2026-09-30. Gleiches Projekt wie UC7: `focusflow-demo-510014`, Region `europe-west3`, Dienst `uc5`.
 Öffentlich ohne Code: Galerie (alle gemessenen Läufe, ohne API-Kosten), `/health`, `/login`. Live-Fragen (Ask,
 Compare) nur mit Zugangscode. Deckel: 0,05 USD je Frage, 0,25 USD je Sitzung, 3,00 USD im Monat.
@@ -21,7 +22,7 @@ den Owner-Zugang nie; sie liest nur `ANALYTICS_RO_URL` (analyst_ro) und `KOSTEN_
 ### Laufzeit-Konto und Secrets
 
 ```bash
-gcloud iam service-accounts create uc5-run --display-name="UC5 Cloud Run (liest nur UC5-Secrets)"
+gcloud iam service-accounts create uc5-run   # existiert seit 2026-09-30 --display-name="UC5 Cloud Run (liest nur UC5-Secrets)"
 
 # Werte aus der lokalen .env, per stdin, ohne Anzeige
 for NAME in ANTHROPIC_API_KEY ANALYTICS_RO_URL KOSTEN_DB_URL SESSION_SECRET ZUGANGSCODE; do

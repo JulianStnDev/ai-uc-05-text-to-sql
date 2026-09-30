@@ -11,5 +11,9 @@
   "metrics": [
     "With the glossary, Haiku 4.5 rises from 58 % to 86 % correct and Sonnet 5.5 from 91 % to 96 %.",
     "Haiku 4.5 with glossary: 9.85 USD per 1000 correct answers, the cheapest combination."
-  ]
+  ],
+  "demo": {
+    "url": "https://uc5-807149335205.europe-west3.run.app/gallery",
+    "note": "Gallery of all measured runs is open; live questions need an access code."
+  }
 }
