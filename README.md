@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: An Analytics Copilot on Trap-Laden Data
 
-> Status: in progress. Branch (a) is done: database, data and goldset. Branches (b) and (c) are measured: with the glossary Haiku 4.5 rises from 58 % to 86 % correct, Sonnet 5.5 from 91 % to 96 %.
+> Status: done. With the glossary Haiku 4.5 rises from 58 % to 86 % correct, Sonnet 5.5 from 91 % to 96 %. Live demo: [gallery of all measured runs](https://uc5-807149335205.europe-west3.run.app/gallery) (open); live questions need an access code.
 
 ## Problem
 Product and support teams at the fictional habit-tracker app FocusFlow ask business questions ("How much revenue did we make in Q2?", "How many customers cancelled in August?") and wait days for an analyst. A copilot that writes and runs SQL could answer in seconds, but only if the number is right. Text-to-SQL rarely fails on syntax. It fails on business rules the schema does not show: duplicate charges, store purchases in a separate table, cancellation vs. end of subscription, refunds, time zones, a misleadingly named column. And it should ask back when a question is ambiguous instead of guessing.

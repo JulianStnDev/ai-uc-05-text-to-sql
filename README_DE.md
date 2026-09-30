@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: Ein Analytics-Copilot auf Daten mit Fallen
 
-> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b) und (c) sind gemessen: Mit Glossar steigt Haiku 4.5 von 58 % auf 86 % richtige Antworten, Sonnet 5.5 von 91 % auf 96 %.
+> Stand: fertig. Mit Glossar steigt Haiku 4.5 von 58 % auf 86 % richtige Antworten, Sonnet 5.5 von 91 % auf 96 %. Live-Demo: [Galerie aller gemessenen Läufe](https://uc5-807149335205.europe-west3.run.app/gallery) (offen); Live-Fragen nur mit Zugangscode.
 
 ## Problem
 Produkt- und Support-Teams der fiktiven Habit-Tracker-App FocusFlow stellen Business-Fragen („Wie viel Umsatz hatten wir im Q2?“, „Wie viele Kunden haben im August gekündigt?“) und warten Tage auf einen Analysten. Ein Copilot, der SQL schreibt und ausführt, könnte in Sekunden antworten, aber nur, wenn die Zahl stimmt. Text-to-SQL scheitert selten an der Syntax. Es scheitert an Geschäftsregeln, die das Schema nicht zeigt: Doppelabbuchungen, Store-Käufe in einer eigenen Tabelle, Kündigung vs. Abo-Ende, Erstattungen, Zeitzonen, eine irreführend benannte Spalte. Und er soll bei mehrdeutigen Fragen zurückfragen statt zu raten.
