@@ -84,7 +84,7 @@
    "id": "E04",
    "typ": "eindeutig",
    "fallen": [
-    "irrefuehrende_spalte"
+    "kuendigung"
    ],
    "frage": "Wie viele Kunden hatten am 30. September 2026 ein laufendes Jahresabo?",
    "sql": "SELECT count(DISTINCT customer_id) AS kunden FROM subscriptions WHERE plan = 'pro_annual' AND started_at < '2026-10-01' AND (ends_at IS NULL OR ends_at >= '2026-10-01')",
@@ -128,15 +128,13 @@
     "erstattung"
    ],
    "frage": "Wie viel Geld haben wir im Gesamtzeitraum an Kunden erstattet, ohne die Erstattungen von Doppelabbuchungen?",
-   "sql": "SELECT count(*) AS erstattungen, sum(amount_usd) AS summe_usd FROM refunds WHERE reason <> 'duplicate_charge'",
+   "sql": "SELECT sum(amount_usd) AS summe_usd FROM refunds WHERE reason <> 'duplicate_charge'",
    "ergebnis": {
     "spalten": [
-     "erstattungen",
      "summe_usd"
     ],
     "zeilen": [
      [
-      25,
       "604.94"
      ]
     ]
@@ -148,6 +146,7 @@
    "fallen": [],
    "frage": "Welcher Kündigungsgrund wurde am häufigsten angegeben, und wie oft?",
    "sql": "SELECT reason, count(*) AS anzahl FROM cancellations GROUP BY reason ORDER BY anzahl DESC, reason LIMIT 1",
+   "top1": true,
    "ergebnis": {
     "spalten": [
      "reason",
@@ -184,6 +183,7 @@
    "fallen": [],
    "frage": "Über welche Plattform kamen im August 2026 die meisten Logins, und wie viele waren es?",
    "sql": "SELECT platform, count(*) AS logins FROM logins WHERE logged_in_at >= '2026-08-01' AND logged_in_at < '2026-09-01' GROUP BY platform ORDER BY logins DESC LIMIT 1",
+   "top1": true,
    "ergebnis": {
     "spalten": [
      "platform",

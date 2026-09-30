@@ -110,3 +110,28 @@ die Toleranz verschluckt also keine Falle. Jede Deutung einer M-Frage gilt ohne 
 - **Schätzung** (vor dem Pilot, noch nicht gemessen): Haiku ca. 0,010 USD je Frage, Sonnet 5.5 ca. 0,034 USD.
   Pilot 27 × Haiku ca. 0,27 USD. Voller Lauf 27 × 3 × 2 Modelle ca. 3,50 USD (schlimmstenfalls 6,60 USD).
 
+
+## 2026-09-30: Vergleichsregeln nach dem Pilot kalibriert, ab dem vollen Lauf eingefroren
+
+Begründung: Der Pilot kalibriert das Messinstrument. Geändert wird nur, was ein Messfehler war, also eine richtige
+Antwort, die als falsch zählte, oder ein falsches Etikett. Ab dem vollen Lauf sind Goldset und Regeln eingefroren.
+
+Pilot (Haiku 4.5, 27 × 1, `evals/laeufe/20260930-132455_haiku_schema.jsonl`): 13/27 nach den alten Regeln. Drei davon
+waren inhaltlich richtig:
+- **Top-1 (E07, E10):** Das Modell hat den richtigen Spitzenwert geliefert, dazu die übrige Rangliste. Die Regel
+  „Zeilenzahl muss stimmen“ hat das als falsch gewertet. Neu: Fragen mit `top1: True` vergleichen nur die erste
+  Ergebniszeile. Steht die Spitze nicht vorn, bleibt es falsch.
+- **E06:** Die Frage fragt „wie viel Geld“, die Referenz verlangte zusätzlich die Anzahl der Erstattungen. Neu: nur die
+  Summe (604,94 USD).
+- **E04:** Das Fallen-Label hieß `irrefuehrende_spalte`, die Frage prüft aber „Kündigung ≠ Abo-Ende“ (der Pilot ist
+  genau daran gescheitert). Neu: `kuendigung`. Das Label ändert keine Bewertung.
+
+Mit den neuen Regeln neu ausgewertet (ohne API): **16/27**. Nicht geändert wurden echte Modellfehler, auch knappe wie
+E12 (8,0 statt 7,4 Tage, weil das Modell Kalendertage statt Zeitdifferenz rechnet).
+
+Beobachtet, nicht geändert: Das Modell verwendet gelegentlich `NOW()`, obwohl der Prompt den 30.09.2026 als heute nennt.
+Das ergibt nur am Stichtag dieselben Zahlen, deshalb läuft der volle Lauf am 30.09.2026. Erwähnt im README.
+
+Kosten im Pilot: 0,178 USD für 27 Fragen (0,0066 USD je Frage, Schätzung war 0,010). p95 9,1 s. Prompt-Caching greift bei
+Haiku nicht (Prompt ca. 1.700 Tokens, Haiku 4.5 cacht erst ab 4.096). Neue Schätzung für den vollen Lauf (je 27 × 3):
+Haiku ca. 0,54 USD, Sonnet 5.5 ca. 1,20–2,40 USD. Budgets 1,00 und 3,50 USD, freigegeben von Julian.

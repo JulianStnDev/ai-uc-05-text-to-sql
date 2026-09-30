@@ -58,6 +58,17 @@ def test_spalten_egal_extras_erlaubt_zeilenzahl_nicht():
     assert not zeilen_gleich(soll, [["web", 15], ["apple", 34], ["google", 9]])          # Werte vertauscht
 
 
+def test_top1_nur_erste_zeile():
+    for fid in ("E07", "E10"):
+        top = FRAGEN[fid]
+        assert top["top1"] is True
+        (spitze,) = top["ergebnis"]["zeilen"]
+        assert bewerten(top, ergebnis([spitze, ["zweiter", 1], ["dritter", 0]]))["richtig"]  # Rangliste erlaubt
+        assert not bewerten(top, ergebnis([["zweiter", 1], spitze]))["richtig"]              # Spitze nicht vorn
+        assert not bewerten(top, ergebnis([]))["richtig"]
+    assert not any(f.get("top1") for f in FRAGEN.values() if f["id"] not in ("E07", "E10"))
+
+
 def test_reihenfolge_nur_wenn_gefordert():
     top = FRAGEN["E02"]
     assert top["reihenfolge"] is True

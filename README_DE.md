@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: Ein Analytics-Copilot auf Daten mit Fallen
 
-> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b) ist vorbereitet (Harness, Werkzeuge, Auswertung, Tests ohne API); gemessen ist noch kein Modell.
+> Stand: in Arbeit. Branch (a) ist fertig: Datenbank, Daten und Goldset. Branch (b): Harness steht, Pilot gemessen (Haiku 4.5, 16/27); der volle Lauf mit Haiku und Sonnet folgt.
 
 ## Problem
 Produkt- und Support-Teams der fiktiven Habit-Tracker-App FocusFlow stellen Business-Fragen („Wie viel Umsatz hatten wir im Q2?“, „Wie viele Kunden haben im August gekündigt?“) und warten Tage auf einen Analysten. Ein Copilot, der SQL schreibt und ausführt, könnte in Sekunden antworten, aber nur, wenn die Zahl stimmt. Text-to-SQL scheitert selten an der Syntax. Es scheitert an Geschäftsregeln, die das Schema nicht zeigt: Doppelabbuchungen, Store-Käufe in einer eigenen Tabelle, Kündigung vs. Abo-Ende, Erstattungen, Zeitzonen, eine irreführend benannte Spalte. Und er soll bei mehrdeutigen Fragen zurückfragen statt zu raten.
@@ -45,7 +45,9 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 ## Evaluationsergebnisse
 Goldset: 27 Fragen auf Deutsch, vor jeder Messung durchgesehen: 14 eindeutig, 6 mehrdeutig (richtige Antwort: eine Rückfrage, dazu jede Deutung mit SQL und Ergebnis), 5 gezielt auf die Fallen, 2 unbeantwortbar (richtige Antwort: „keine Daten dazu“; eine Ersatz-Abfrage mit ähnlicher Spalte gilt als falsch). Tabelle: [evals/goldset.md](evals/goldset.md).
 
-Die Vergleichsregeln stehen vor der ersten Messung als Code fest ([scripts/vergleich.py](scripts/vergleich.py)): verglichen wird das Ergebnis der ausgeführten SQL, nicht der Fließtext; Ganzzahlen exakt, Dezimalzahlen auf eine Einheit der letzten Stelle; deutsches und englisches Zahlenformat; Spaltennamen und zusätzliche Spalten egal, die Zeilenzahl nicht; Zeilenreihenfolge nur bei Top-N-Fragen; eine Rückfrage ist bei mehrdeutigen und unbeantwortbaren Fragen richtig, bei allen anderen falsch. Ein Selbsttest prüft, dass jede Referenz als richtig und jede naive Fallen-Antwort als falsch gilt. Messungen folgen in Branch (b) und (c).
+Die Vergleichsregeln stehen vor der ersten Messung als Code fest ([scripts/vergleich.py](scripts/vergleich.py)): verglichen wird das Ergebnis der ausgeführten SQL, nicht der Fließtext; Ganzzahlen exakt, Dezimalzahlen auf eine Einheit der letzten Stelle; deutsches und englisches Zahlenformat; Spaltennamen und zusätzliche Spalten egal, die Zeilenzahl nicht; Zeilenreihenfolge nur bei Top-N-Fragen; bei Top-1-Fragen zählt nur die erste Zeile; eine Rückfrage ist bei mehrdeutigen und unbeantwortbaren Fragen richtig, bei allen anderen falsch. Ein Selbsttest prüft, dass jede Referenz als richtig und jede naive Fallen-Antwort als falsch gilt.
+
+**Pilot (Haiku 4.5, 27 × 1, nur Schema): 16/27 richtig.** Der Pilot hat das Messinstrument kalibriert: Drei richtige Antworten waren als falsch gewertet worden (eine Top-1-Antwort mit angehängter übriger Rangliste und eine Referenz, die mehr verlangte als die Frage). Diese Regeln wurden als datierte Entscheidung korrigiert und vor dem vollen Lauf eingefroren. Details, Kosten je Frage und Fehler-Rundgang: [evals/pilot.md](evals/pilot.md).
 
 ## Kosten & Latenz
 - Kosten pro 1000 Requests: folgt (Branch b)
@@ -69,6 +71,7 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # einmalig: Datenbank,
 - **Vergleichsregeln vor der Messung festlegen.** Sonst wird die Toleranz gewählt, nachdem man die Ergebnisse gesehen hat. Der Selbsttest zeigt außerdem, dass eine Toleranz von einer Einheit der letzten Stelle keine Falle verschluckt.
 - **Realismus an den Zahlen prüfen.** Die erste Fassung der Login-Daten hatte 586 von 600 Kunden im September aktiv, weil Gratis-Nutzer nie einschliefen. Die Kennzahl wäre wertlos gewesen.
 - **Sitzungs-Zeitzone festlegen.** Datumsgrenzen wie `'2026-05-01'` hängen von der Zeitzone der Sitzung ab; alle Skripte setzen UTC.
+- **Das Modell schreibt manchmal `NOW()`**, obwohl der Prompt den 30.09.2026 als heute nennt. Solche Abfragen treffen die Referenz nur an diesem Tag, deshalb lief der volle Lauf am 30.09.2026. Beobachtet, nicht korrigiert.
 
 ## Was ich anders machen würde
 Folgt zum Abschluss des Use Cases.

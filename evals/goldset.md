@@ -7,9 +7,9 @@ Erzeugt von `scripts/goldset_berechnen.py` aus `evals/goldset_fragen.py`. Nicht 
 | E01 | eindeutig | Wie viele Kunden haben sich im März 2026 registriert? | – | neukunden: 54 |  |
 | E02 | eindeutig | In welchen fünf Ländern haben wir die meisten Kunden, und wie viele sind es jeweils? | – | DE 189 · US 121 · GB 52 · AU 45 · JP 38 |  |
 | E03 | eindeutig | Wie viele Pro-Abos wurden im ersten Quartal 2026 abgeschlossen, aufgeteilt nach Kanal? | – | apple 15 · google 9 · web 34 |  |
-| E04 | eindeutig | Wie viele Kunden hatten am 30. September 2026 ein laufendes Jahresabo? | irrefuehrende_spalte | kunden: 98 |  |
+| E04 | eindeutig | Wie viele Kunden hatten am 30. September 2026 ein laufendes Jahresabo? | kuendigung | kunden: 98 |  |
 | E05 | eindeutig | Wie hoch war der Umsatz im Mai 2026? | doppelabbuchung, store, erstattung | umsatz_usd: 1224.34 |  |
-| E06 | eindeutig | Wie viel Geld haben wir im Gesamtzeitraum an Kunden erstattet, ohne die Erstattungen von Doppelabbuchungen? | doppelabbuchung, erstattung | erstattungen: 25, summe_usd: 604.94 |  |
+| E06 | eindeutig | Wie viel Geld haben wir im Gesamtzeitraum an Kunden erstattet, ohne die Erstattungen von Doppelabbuchungen? | doppelabbuchung, erstattung | summe_usd: 604.94 |  |
 | E07 | eindeutig | Welcher Kündigungsgrund wurde am häufigsten angegeben, und wie oft? | – | reason: price_increase, anzahl: 49 |  |
 | E08 | eindeutig | Wie viele Kunden haben sich im Juli 2026 mindestens einmal eingeloggt? | – | kunden: 316 |  |
 | E10 | eindeutig | Über welche Plattform kamen im August 2026 die meisten Logins, und wie viele waren es? | – | platform: ios, logins: 2239 |  |

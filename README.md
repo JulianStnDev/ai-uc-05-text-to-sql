@@ -2,7 +2,7 @@
 
 # UC5 — Text-to-SQL: An Analytics Copilot on Trap-Laden Data
 
-> Status: in progress. Branch (a) is done: database, data and goldset. Branch (b) is prepared (harness, tools, evaluation, tests without API); no model has been measured yet.
+> Status: in progress. Branch (a) is done: database, data and goldset. Branch (b): harness ready, pilot measured (Haiku 4.5, 16/27); the full run with Haiku and Sonnet follows.
 
 ## Problem
 Product and support teams at the fictional habit-tracker app FocusFlow ask business questions ("How much revenue did we make in Q2?", "How many customers cancelled in August?") and wait days for an analyst. A copilot that writes and runs SQL could answer in seconds, but only if the number is right. Text-to-SQL rarely fails on syntax. It fails on business rules the schema does not show: duplicate charges, store purchases in a separate table, cancellation vs. end of subscription, refunds, time zones, a misleadingly named column. And it should ask back when a question is ambiguous instead of guessing.
@@ -45,7 +45,9 @@ evals/goldset_fragen.py ──▶ scripts/goldset_berechnen.py ──(analyst_ro
 ## Evaluation Results
 Goldset: 27 questions in German, reviewed before any measurement: 14 unambiguous, 6 ambiguous (correct answer: a clarifying question, plus every interpretation with SQL and result), 5 aimed at the traps, 2 unanswerable (correct answer: "no data on this"; a substitute query on a similar column counts as wrong). Table: [evals/goldset.md](evals/goldset.md).
 
-Comparison rules were fixed as code before the first measurement ([scripts/vergleich.py](scripts/vergleich.py)): the executed SQL result is compared, not the prose; integers exactly, decimals within one unit of the last digit; German and English number formats; column names and extra columns do not matter, row count does; row order only for top-N questions; a clarifying question is correct for ambiguous and unanswerable questions and wrong for all others. A self-test checks that every reference counts as correct and every naive trap answer as wrong. Measurements follow in branches (b) and (c).
+Comparison rules were fixed as code before the first measurement ([scripts/vergleich.py](scripts/vergleich.py)): the executed SQL result is compared, not the prose; integers exactly, decimals within one unit of the last digit; German and English number formats; column names and extra columns do not matter, row count does; row order only for top-N questions; for top-1 questions only the first row counts; a clarifying question is correct for ambiguous and unanswerable questions and wrong for all others. A self-test checks that every reference counts as correct and every naive trap answer as wrong.
+
+**Pilot (Haiku 4.5, 27 × 1, schema only): 16/27 correct.** The pilot calibrated the instrument: three correct answers had been graded wrong (a top-1 answer with the rest of the ranking attached, and a reference that asked for more than the question). Those rules were fixed as a dated decision, then frozen before the full run. Details, cost per question and an error walkthrough: [evals/pilot.md](evals/pilot.md).
 
 ## Cost & Latency
 - Cost per 1000 requests: pending (branch b)
@@ -69,6 +71,7 @@ NEON_OWNER_URL=... .venv/bin/python scripts/setup_db.py   # once: database, role
 - **Fix the comparison rules before measuring.** Otherwise the tolerance is chosen after seeing the results. The self-test also shows that a tolerance of one unit in the last digit does not swallow any trap.
 - **Check realism against the numbers.** The first version of the login data had 586 of 600 customers active in September because free users never went dormant. The measure would have been meaningless.
 - **Fix the session time zone.** Date boundaries like `'2026-05-01'` depend on the session time zone; all scripts set UTC.
+- **The model sometimes writes `NOW()`** although the prompt says today is 30.09.2026. Such queries only match the reference on that day, so the full run took place on 30.09.2026. Observed, not corrected.
 
 ## What I Would Do Differently
 Pending until the end of the use case.
