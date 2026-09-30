@@ -97,24 +97,56 @@ def _block(b):
     return b.model_dump(mode="json", exclude_none=True) if hasattr(b, "model_dump") else str(b)
 
 
+# Format "karte" (Branch d): strukturierte Antwort für die Oberfläche. Messläufe aus (b) und (c) nutzen TOOLS unverändert.
+ANWEISUNG_KARTE = """Antwortformat: Das Werkzeug antworten hat strukturierte Felder.
+- ergebnis: die Antwort in einem Satz, bei rueckfrage die Rückfrage, bei keine_daten die Erklärung.
+- begriffe: die Begriffe aus den Geschäftsdefinitionen, die du verwendet hast (leer, wenn keine).
+- annahmen: höchstens 4 kurze Annahmen, die deine SQL umsetzt.
+- andere_deutung: eine andere naheliegende Deutung der Frage in einem Satz, falls es eine gibt, sonst leer.
+- andere_deutung_sql: die SQL zu dieser Deutung, sonst leer.
+- sql: bei ergebnis die SQL der Antwort, sonst leer."""
+
+TOOLS_KARTE = [TOOLS[0], {
+    "name": "antworten",
+    "description": "Beendet die Frage. art: ergebnis (mit SQL), rueckfrage oder keine_daten.",
+    "strict": True,
+    "input_schema": {"type": "object",
+                     "properties": {"art": {"type": "string", "enum": ["ergebnis", "rueckfrage", "keine_daten"]},
+                                    "ergebnis": {"type": "string", "description": "Antwort in einem Satz, Rückfrage oder Erklärung"},
+                                    "begriffe": {"type": "array", "items": {"type": "string"},
+                                                 "description": "Verwendete Begriffe aus den Geschäftsdefinitionen"},
+                                    "annahmen": {"type": "array", "items": {"type": "string"},
+                                                 "description": "Höchstens 4 kurze Annahmen, die die SQL umsetzt"},
+                                    "andere_deutung": {"type": "string", "description": "Andere naheliegende Deutung, sonst leer"},
+                                    "andere_deutung_sql": {"type": "string", "description": "SQL zur anderen Deutung, sonst leer"},
+                                    "sql": {"type": "string", "description": "Bei ergebnis: die SQL der Antwort, sonst leer"}},
+                     "required": ["art", "ergebnis", "begriffe", "annahmen", "andere_deutung", "andere_deutung_sql", "sql"],
+                     "additionalProperties": False}}]
+
+
 def kosten_usd(modell: str, usage) -> float:
     p = MODELLE[modell]
     ein = (usage.input_tokens + 1.25 * (usage.cache_creation_input_tokens or 0) + 0.1 * (usage.cache_read_input_tokens or 0))
     return (ein * p["input"] + usage.output_tokens * p["output"]) / 1e6
 
 
-def beantworten(client, conn, frage: str, modell: str, variante: str = "schema", *, zusatz: str | None = None,
-                thinking_anzeigen: bool = False, mitschnitt: list | None = None) -> dict:
+def beantworten(client, conn, frage: str, modell: str, variante: str = "schema", *, format: str = "kurz",
+                zusatz: str | None = None, thinking_anzeigen: bool = False, mitschnitt: list | None = None) -> dict:
     """Ein Durchlauf für eine Frage. Gibt Antwort, Protokoll, Tokens, Kosten und Dauer zurück.
 
     Nur für Experimente (docs/ANATOMIE.md), in Messläufen nie gesetzt:
     zusatz: ein Satz, der an den System-Prompt angehängt wird.
     thinking_anzeigen: Sonnet liefert eine Zusammenfassung des Thinkings (display "summarized") statt eines leeren
         Blocks. Das Thinking selbst ändert sich dadurch nicht, nur seine Sichtbarkeit.
-    mitschnitt: Liste, an die je Aufruf der rohe Request und die rohe Response als JSON-fähiges dict angehängt werden."""
+    mitschnitt: Liste, an die je Aufruf der rohe Request und die rohe Response als JSON-fähiges dict angehängt werden.
+
+    format: "kurz" (Messläufe b und c, unverändert) oder "karte" (Branch d: strukturierte Felder; die Zahl zur anderen
+        Deutung rechnet der Harness selbst aus andere_deutung_sql, nie aus dem Text des Modells)."""
+    if format not in ("kurz", "karte"):
+        raise ValueError(f"Unbekanntes Format: {format!r}")
     m = MODELLE[modell]
-    system = system_prompt(variante) + (f"\n\n{zusatz}" if zusatz else "")
-    params = {"model": m["id"], "max_tokens": MAX_TOKENS, "system": system, "tools": TOOLS,
+    system = system_prompt(variante) + (f"\n\n{ANWEISUNG_KARTE}" if format == "karte" else "") + (f"\n\n{zusatz}" if zusatz else "")
+    params = {"model": m["id"], "max_tokens": MAX_TOKENS, "system": system, "tools": TOOLS_KARTE if format == "karte" else TOOLS,
               "cache_control": {"type": "ephemeral"}}
     if "effort" in m:
         params["output_config"] = {"effort": m["effort"]}
@@ -167,7 +199,15 @@ def beantworten(client, conn, frage: str, modell: str, variante: str = "schema",
 
     ergebnis = {"art": None, "text": None, "sql": None, "zeilen": None}
     if antwort:
-        ergebnis.update(art=antwort["art"], text=antwort["text"], sql=antwort["sql"] or None)
+        ergebnis.update(art=antwort["art"], text=antwort.get("text", antwort.get("ergebnis")), sql=antwort["sql"] or None)
+        if format == "karte":
+            ergebnis["karte"] = {"begriffe": antwort["begriffe"], "annahmen": antwort["annahmen"],
+                                 "andere_deutung": antwort["andere_deutung"] or None,
+                                 "andere_deutung_sql": antwort["andere_deutung_sql"] or None, "andere_deutung_zeilen": None}
+            if antwort["andere_deutung_sql"]:
+                e = sql_ausfuehren(conn, antwort["andere_deutung_sql"])  # Zahl der anderen Deutung, nicht bewertet
+                ergebnis["karte"]["andere_deutung_zeilen"] = e["zeilen"] if e["ok"] else None
+                ergebnis["karte"]["andere_deutung_fehler"] = None if e["ok"] else e["fehler"]
         if antwort["art"] == "ergebnis":
             e = sql_ausfuehren(conn, antwort["sql"])  # bewertet wird das Ergebnis dieser SQL
             ergebnis["zeilen"] = e["zeilen"] if e["ok"] else None
