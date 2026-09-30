@@ -158,3 +158,19 @@ zu sehen sein.
 - Ergebnis „ein Satz Prompt“: 0/10 bei Haiku (U01, M02), kein Unterschied zum vollen Lauf. Für Branch (c) folgt daraus:
   Das Glossar liefert Fakten (was `channel` bedeutet, was fehlt, welche Kundendefinitionen es gibt), keine weiteren
   Verhaltensregeln. Details: docs/ANATOMIE.md.
+
+## 2026-09-30: Branch (c): Glossar-Entwurf unverändert eingefroren
+
+Entscheidung von Julian: Die Hauptmessung von Branch (c) nutzt den Glossar-Entwurf aus Branch (a) unverändert. Er
+wurde vor jeder Messung geschrieben, der Vergleich (b) gegen (c) misst also den Wert eines vorab festgelegten Glossars.
+`docs/GLOSSAR.md` ist ab jetzt eingefroren: SHA-256 `e3d770e9c4edfdd5a0f9e978a920baaf1cf29f69d73d99dcb559c8b62aa38393`, letzter Commit der Datei
+`87867e2`. Die Datei wird auch nicht mit einem Stand-Vermerk versehen, weil ihr Inhalt wörtlich in den Prompt
+geht.
+
+- Voller Lauf: Haiku 4.5 und Sonnet 5.5, je 27 × 3, Variante `glossar`, Budgets 1,50 und 3,00 USD, freigegeben.
+  Schätzung ca. 0,75 und 1,10 USD (Prompt mit Glossar: Haiku 2.898 Tokens, weiter unter der Cache-Schwelle; Sonnet
+  3.828 Tokens).
+- Regeln und Goldset unverändert. Mit Glossar gilt für M06 der vorab festgelegte `mit_glossar`-Eintrag (eindeutig, 374).
+- Kein Pilot: Regeln und Harness sind kalibriert und eingefroren, das Glossar ändert nur den Prompt.
+- Keine Liste fehlender Daten (etwa „nicht erfasst: Marketingkanal, NPS“), in keiner Variante: Das wäre die Antwort auf
+  U01 und U02, direkt in den Prompt geschrieben.
